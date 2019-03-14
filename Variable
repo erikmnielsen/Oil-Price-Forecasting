@@ -1,3 +1,7 @@
 IMF:
-We rely on well-established macroeconomic and oil market variables such as global industrial production, oil supply and oil inventories to capture demand and supply as well as speculative (precautionary) demand effects on oil prices as noted by Kilian (2009) and Kilian and Murphy (2014). In addition, for the purpose of providing a nominal oil price forecast, we introduce CPI inflation into our VAR model. Finally, building on Chen et al. (2010) and Grisse (2010), we augment the VAR model with the U.S. dollar exchange rate, trade weighted vis-à-vis the largest oil consumers to account for the impact of the exchange rate channel on oil demand.
-
+We rely on well-established macroeconomic and oil market variables such as global industrial production, oil supply 
+and oil inventories to capture demand and supply as well as speculative (precautionary) demand effects on oil prices 
+as noted by Kilian (2009) and Kilian and Murphy (2014). In addition, for the purpose of providing a nominal oil price 
+forecast, we introduce CPI inflation into our VAR model. Finally, building on Chen et al. (2010) and Grisse (2010), we 
+augment the VAR model with the U.S. dollar exchange rate, trade weighted vis-à-vis the largest oil consumers to account 
+for the impact of the exchange rate channel on oil demand.
