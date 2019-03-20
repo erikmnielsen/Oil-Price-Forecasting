@@ -5,7 +5,8 @@ library(timeSeries)
 library(vars)
 library(aTSA)
 
-Variable <- read_excel("~/8.semester projekt/Variable.xlsx")
+# Variable <- read_excel("~/8.semester projekt/Variable.xlsx")
+Variable <- read_excel("Variable.xlsx")
 
 
 
