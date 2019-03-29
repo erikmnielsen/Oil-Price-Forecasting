@@ -25,12 +25,17 @@ library(vars)
 # Variable <- read_excel("~/8.semester projekt/Variable.xlsx")
 data <- read_excel("Variable.xlsx")
 data <- as.data.frame(data)
+data$RO <- data$WTI/data$`CPI US`
+data$lRO <- log(data$RO)
+data$OP <- log(data$`World oil prod`) - lag.xts(log(data$`World oil prod`),k = 1) 
+data$OI <- (data$`OECD Pet inv`/data$`US Pet inv`)*data$`US crude inv`
+data$dOI <- diff.xts(data$OI,differences = 1)
 data$Date <- as.yearmon(format(data$Date), "%Y-%m-%d") #"Q%q%Y"
 
 View(data)
 data.xts <- xts(data[-1], data[[1]])
 data.xts <- data.xts["1973-01/2018-06"]
-plot(data.xts$WTI)
+plot(data.xts$lRO)
 
 # test --------------------------------------------------------------------
 
@@ -94,7 +99,7 @@ data.fin=merge(data.xts,d_WTI,..............,join='inner')
 
 # VAR ---------------------------------------------------------------------
 VARselect(data.xts)        
-VAR <- VAR(data.xts, p=6) 
+VAR <- VAR(data.xts, p=6, type="") 
 VAR
 
 serial.test(VAR, lags.pt=10, type="PT.asymptotic")
