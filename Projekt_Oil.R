@@ -37,6 +37,16 @@ plot(data.xts$WTI)
 WTI = data.xts$WTI
 d_WTI<-diff(WTI)
 
+a <- ggAcf(WTI)
+b <- ggPacf(WTI)
+c <- ggAcf(d_WTI)
+d <- ggPacf(d_WTI)
+grid.arrange(a,b,c,d,nrow=2)
+
+par(mfrow=c(2,1))
+plot(WTI)
+plot(d_WTI)
+
 fit.lin <- lm(WTI ~ 1)
 checkresiduals(fit.lin)
 
@@ -44,11 +54,17 @@ fit.lin2 <- lm(d_WTI ~ 1)
 checkresiduals(fit.lin2)
 plot(ts(fit.lin2$residuals^2))
 
-
 testt <- ur.df(WTI,type="trend",lags = 10, selectlags = "AIC")
 testd <- ur.df(WTI,type="drift", lags = 10, selectlags = "AIC")
 testn <- ur.df(WTI,type="none", lags = 10, selectlags = "AIC")
 summary(testn)
+
+Box.test(testn@res,lag=6, type="Lj")
+
+
+
+
+
 
 WOP = data.xts$`World oil prod`
 CPI = data.xts$`CPI US`
@@ -70,8 +86,6 @@ testn <- ur.df(PetInv,type="none", lags = 10, selectlags = "AIC")
 testt <- ur.df(REA,type="trend",lags = 10, selectlags = "AIC")
 testd <- ur.df(REA,type="drift", lags = 10, selectlags = "AIC")
 testn <- ur.df(REA,type="none", lags = 10, selectlags = "AIC")
-
-
 
 
 data.fin=merge(data.xts,d_WTI,..............,join='inner')
