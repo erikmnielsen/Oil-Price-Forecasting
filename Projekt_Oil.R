@@ -21,6 +21,7 @@ library(tseries)
 library(fpp2)
 library(vars)
 library(MTS)
+library(portes)
 
 
 # Variable <- read_excel("~/8.semester projekt/Variable.xlsx")
@@ -154,15 +155,21 @@ data.VAR <- data.xts[-1,c("World REA Index","dOI","lRO","OP")]
 VARselect(data.VAR,lag.max =  36)        
 VAR <- VAR(data.VAR, p=12) 
 VAR
+roots(VAR)
+
+
 
 acf(VAR$y)
 
-
-?serial.test
 serial.test(VAR, lags.pt=40)
 ?mq
-mq(VAR.ma)
-VAR.ma = as.data.frame(VAR$datamat)
+
+mq(VAR.ts)
+res <- residuals(VAR)
+VAR.ts = ts(VAR$datamat)
+?LjungBox
+
+LjungBox(res, lags = 40)
 
 Acoef(VAR) ### [KxK] matrix med koeff
 
