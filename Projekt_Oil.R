@@ -9,7 +9,7 @@ library(ggthemes)
 
 #library(dplyr)
 #library(timeSeries)
-#library(aTSA)
+library(aTSA)
 #library(rugarch)
 #library(fBasics)
 #library(fGarch)
@@ -69,10 +69,10 @@ fit.lin2 <- lm(d_WTI ~ 1)
 checkresiduals(fit.lin2)
 plot(ts(fit.lin2$residuals^2))
 
-testt <- ur.df(WTI,type="trend",lags = 10, selectlags = "AIC")
-testd <- ur.df(WTI,type="drift", lags = 10, selectlags = "AIC")
-testn <- ur.df(WTI,type="none", lags = 10, selectlags = "AIC")
-summary(testn)
+testt <- ur.df(WTI,type="trend",lags = 12)
+testd <- ur.df(WTI,type="drift", lags = 12)
+testn <- ur.df(WTI,type="none", lags = 12)
+summary(testt)
 
 Box.test(testn@res,lag=6, type="Lj")
 
@@ -88,12 +88,22 @@ REA = data.xts$`World REA Index`
 RO = data.xts$RO
 lRO = data.xts$lRO
 
-testROt <- ur.df(RO,type="trend",lags = 10, selectlags = "AIC")
+testROt <- ur.df(RO,type="trend",lags = 10, selectlags = "AIC") #Vælger 2 lags
+testROt <- ur.df(RO,type="trend",lags = 6)
 testROd <- ur.df(RO,type="drift", lags = 10, selectlags = "AIC")
-testROn <- ur.df(RO,type="none", lags = 10, selectlags = "AIC")
+testROd <- ur.df(RO,type="drift", lags = 6)
+
+
+ddRO = diff(RO)
+testROn <- ur.df(ddRO,type="drift", lags = 10, selectlags = "AIC")
 summary(testROt)
-summary(testROd)
+summary(testROd) #ved 6 lags er der unit root
 summary(testROn)
+
+
+fit.lin2 <- lm(RO ~ 1)
+checkresiduals(fit.lin2)
+adf.test(RO)
 
 Box.test(testROn@res,lag=1, type="Lj")
 
@@ -232,25 +242,27 @@ f.var$forecast$lRO
 # VAR FORECASTS ALL 4 VARIABLES -------------------------------------------
 
 data.VAR <- data.xts[-1,c("Kilian","dOI","lRO","OP")]
+data.VAR <- data.xts[-1,c("Kilian","dOI","l_diff_RO","OP")]
 data.VAR <- data.xts[-1,c("World REA Index","dOI","lRO","OP")]
 VARselect(data.VAR,lag.max =  12)$selection
 VAR.ts <- ts(data.VAR,frequency=12,start=c(1973, 2), end=c(2018, 6))
+v=c(NA)
 
-
-for (i in 1:182) {
-  train = VAR.ts[1:363+i, ]
+for (i in 0:181) {
+  train = VAR.ts[1:(364+i), ]
   VARf <- VAR(train, p=12)
-  recursive = predict(VARf, n.ahead=3)
-  fcst=recursive$fcst$lRO[3,"fcst"]
-  v[i]=fcst
+  recursive = predict(VARf, n.ahead=1)
+  fcst=recursive$fcst$lRO[,"fcst"] #OBS
+  v[i+1]=fcst
 }
+
 test = subset(VAR.ts[, "lRO"],start=365,end = 545)
 RW = VAR.ts[-c(1:363), "lRO"]
 RWf.ts = ts(RW[1:181], frequency=12, start=c(2003, 6), end=c(2018, 6))
 VARf.ts = ts(v[1:181], frequency=12, start=c(2003, 6), end=c(2018, 6))
 
-autoplot(subset(VAR.ts[, "lRO"], end = 545)) +
-#autoplot(test) + #evt: series = "Real Price"
+#autoplot(subset(VAR.ts[, "lRO"], end = 545)) +
+autoplot(test) + #evt: series = "Real Price"
   autolayer(VARf.ts, series="VARf") +
   autolayer(RWf.ts, series="RWf") +
   xlab("Time") + ylab("Log Price") +
@@ -270,26 +282,38 @@ PE_RW = RWf.ts-test
 MSPE_RW = mean((PE_RW)^2)
 MSPE_VAR/MSPE_RW #fraction of random walk - should be <1 to beat the RW
 
-#Resultater (opdateres)
-##12 lags, h=1: MSPE=1.135761
-##24 lags, h=1: MSPE=1.493964
-
 plot(ts(PE_VAR^2))
-lines(PE_RW^2, col = "red")
+lines(ts(PE_RW^2), col = "red")
 
-#andet plot
-df = data.frame(date = as.Date(rownames(VAR.ts)),
-                RealOilPrice  = VAR.ts[,"lRO"],
-                fitted=c(rep(NA, 3), fitted(VAR)[ ,1], rep(NA, 24)),
-                forecast = c(rep(NA,132), recursive[, 1]))
 
-dfm = melt(df,id.vars = "date")
-ggplot(data = dfm) + geom_line(aes(x = date, y = value, color = variable))+
-  geom_hline(yintercept = mean(train[ ,1]), linetype = 2,color = "yellow")
+# 4 Variables, h=3 ---------------------------------------------------------
+
+for (i in 0:181) {
+  train = VAR.ts[1:(364+i), ]
+  VARf <- VAR(train, p=12)
+  recursive = predict(VARf, n.ahead=3)
+  fcst=recursive$fcst$lRO[3,"fcst"]
+  v[i+1]=fcst
+}
+
+test = subset(VAR.ts[, "lRO"],start=367,end = 545)
+RW = VAR.ts[-c(1:363), "lRO"]
+RWf.ts = ts(RW[1:179], frequency=12, start=c(2003, 8), end=c(2018, 6))
+VARf.ts = ts(v[1:179], frequency=12, start=c(2003, 8), end=c(2018, 6))
+
+PE_VAR=VARf.ts-test
+MSPE_VAR = mean((PE_VAR)^2)
+PE_RW = RWf.ts-test
+MSPE_RW = mean((PE_RW)^2)
+MSPE_VAR/MSPE_RW #fraction of random walk - should be <1 to beat the RW
+
+
 
 
 # Replication -------------------------------------------------------------
+
 data.VAR <- data.xts[-1,c("Kilian","dOI","lRO","OP")]
+VAR.ts <- ts(data.VAR,frequency=12,start=c(1973, 2), end=c(2018, 6))
 
 for (i in 0:213) {
   train = VAR.ts[1:(226+i), ]
@@ -301,11 +325,11 @@ for (i in 0:213) {
 
 test = subset(VAR.ts[, "lRO"],start=227,end = 439)
 RW = VAR.ts[-c(1:225), "lRO"]
-RWf.ts = ts(RW[1:212], frequency=12, start=c(1991, 12), end=c(2009, 8))
-VARf.ts = ts(v[1:212], frequency=12, start=c(1991, 12), end=c(2009, 8))
+RWf.ts = ts(RW[1:213], frequency=12, start=c(1991, 12), end=c(2009, 8))
+VARf.ts = ts(v[1:213], frequency=12, start=c(1991, 12), end=c(2009, 8))
 
-#autoplot(subset(VAR.ts[, "lRO"], end = 438)) +
-autoplot(test, series = "Real Price") +
+autoplot(subset(VAR.ts[, "lRO"], end = 438)) +
+#autoplot(test, series = "Real Price") +
   autolayer(VARf.ts, series="VARf") +
   autolayer(RWf.ts, series="RWf") +
   xlab("Time") + ylab("Log Price") +
@@ -318,6 +342,7 @@ autoplot(test, series = "Real Price") +
 #FORECAST ACCURACY
 ac.rwf = accuracy(RWf.ts, test)
 ac.varf =accuracy(VARf.ts, test)
+
 
 PE_VAR=VARf.ts-test
 MSPE_VAR = mean((PE_VAR)^2)
