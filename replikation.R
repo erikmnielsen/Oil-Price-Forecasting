@@ -99,8 +99,8 @@ v = c(NA)
 for (i in 0:213) {
   train = VAR.ts[1:(226+i), ]
   VARf <- VAR(train, p=12)
-  recursive = predict(VARf, n.ahead=1)
-  fcst=recursive$fcst$lRO[,"fcst"]
+  recursive = predict(VARf, n.ahead=3)
+  fcst=recursive$fcst$lRO[3,"fcst"]
   v[i+1]=fcst
 }
 
@@ -145,8 +145,8 @@ v = c(NA)
 for (i in 0:213) {
   train = VAR.ts[1:(226+i), ]
   VARf <- VAR(train, p=12)
-  recursive = predict(VARf, n.ahead=1)
-  fcst=recursive$fcst$lRO[,"fcst"]
+  recursive = predict(VARf, n.ahead=6)
+  fcst=recursive$fcst$lRO[6,"fcst"]
   v[i+1]=fcst
 }
 
@@ -191,8 +191,8 @@ v = c(NA)
 for (i in 0:213) {
   train = VAR.ts[1:(226+i), ]
   VARf <- VAR(train, p=12)
-  recursive = predict(VARf, n.ahead=1)
-  fcst=recursive$fcst$lRO[,"fcst"]
+  recursive = predict(VARf, n.ahead=9)
+  fcst=recursive$fcst$lRO[9,"fcst"]
   v[i+1]=fcst
 }
 
@@ -240,8 +240,8 @@ v = c(NA)
 for (i in 0:213) {
   train = VAR.ts[1:(226+i), ]
   VARf <- VAR(train, p=12)
-  recursive = predict(VARf, n.ahead=1)
-  fcst=recursive$fcst$lRO[,"fcst"]
+  recursive = predict(VARf, n.ahead=12)
+  fcst=recursive$fcst$lRO[12,"fcst"]
   v[i+1]=fcst
 }
 
