@@ -4,8 +4,8 @@ library(fpp2)
 library(vars)
 library(readxl)
 library(urca)
-
 library(forecast)
+library(ggthemes)
 
 #library(dplyr)
 #library(timeSeries)
@@ -192,7 +192,7 @@ pred2 <- predict(fit2, n.ahead = 1)
 
 
 
-# VAR ---------------------------------------------------------------------
+# VAR testing---------------------------------------------------------------------
 
 #data.fin=merge(data.xts,d_WTI,..............,join='inner')
 #data.xts$``
@@ -222,83 +222,108 @@ LjungBox(res, lags = 2)
 Acoef(VAR) ### [KxK] matrix med koeff
 
 
-forecast(VAR2, h=1) %>% autoplot() + xlab("Year")
+forecast(VARf, h=1)
 
 f.var = forecast(VAR2, h=1)
 f.var$forecast$lRO
 
 
+# VAR FORECASTS ALL 4 VARIABLES -------------------------------------------
 
+data.VAR <- data.xts[-1,c("World REA Index","dOI","lRO","OP")]
+VARselect(data.VAR,lag.max =  12)$selection
+VAR.ts <- ts(data.VAR,frequency=12,start=c(1973, 2), end=c(2018, 6))
 
-
-
-# = 24 out-of-sample (test) observations = #
 
 for (i in 1:182) {
   train = VAR.ts[1:363+i, ]
-  #test = VAR.ts[-c(1:363+i), ]
-  real = VAR.ts[-c(1:364), "lRO"]
-  RW = VAR.ts[-c(1:363), "lRO"]
-  ForecastRW = RW[1:181]
-  # = Estimate model and compute forecasts = #
   VARf <- VAR(train, p=12)
-  recursive = predict(VARf, n.ahead=1)
-  #print(recursive$fcst$lRO)
-  fcst=recursive$fcst$lRO[,"fcst"]
+  recursive = predict(VARf, n.ahead=3)
+  fcst=recursive$fcst$lRO[3,"fcst"]
   v[i]=fcst
-  
-
-  
-#plot(ts(recursive$fcst$lRO[,"fcst"]))
-  #plot(ts(real[1:10]))
-        #plot(real, type ="l"))
-PE_VAR=v[1:181]-real
-MSPE_VAR = mean((PE_VAR)^2)
-
-PE_RW = ForecastRW-real
-MSPE_RW = mean((PE_RW)^2)
-
 }
+test = subset(VAR.ts[, "lRO"],start=365,end = 545)
+RW = VAR.ts[-c(1:363), "lRO"]
+RWf.ts = ts(RW[1:181], frequency=12, start=c(2003, 6), end=c(2018, 6))
+VARf.ts = ts(v[1:181], frequency=12, start=c(2003, 6), end=c(2018, 6))
 
 
+autoplot(subset(VAR.ts[, "lRO"], end = 545)) +
+#autoplot(test) + #evt: series = "Real Price"
+  autolayer(VARf.ts, series="VARf") +
+  autolayer(RWf.ts, series="RWf") +
+  xlab("Time") + ylab("Log Price") +
+  ggtitle("Forecasting real price of WTI") +
+  guides(colour=guide_legend(title="Forecasts:")) +
+  theme_economist() +
+  scale_color_economist()
 
-MSPE_VAR
-MSPE_RW
+#Forecast Accuracy
+ac.rwf = accuracy(RWf.ts, test)
+ac.varf =accuracy(VARf.ts, test)
 
-MSPE_VAR/MSPE_RW
+PE_VAR=VARf.ts-test
+MSPE_VAR = mean((PE_VAR)^2)
+PE_RW = RWf.ts-test
+MSPE_RW = mean((PE_RW)^2)
+MSPE_VAR/MSPE_RW #fraction of random walk - should be <1 to beat the RW
 
-RW
-ForecastRW
-
-
-rwf(trainRW, h = 1)[,"Forecast"]
-rwf
-RW$fitted
-
-?rwf
-MSPE
-plot(ts(v))
-lines(real, col = "blue")
-lines(ForecastRW, col = "red")
+#Resultater (opdateres)
+##12 lags, h=1: MSPE=1.135761
+##24 lags, h=1: MSPE=1.493964
 
 plot(ts(PE_VAR^2))
 lines(PE_RW^2, col = "red")
 
-?predict
-
-
-
-
-
+#andet plot
 df = data.frame(date = as.Date(rownames(VAR.ts)),
                 RealOilPrice  = VAR.ts[,"lRO"],
                 fitted=c(rep(NA, 3), fitted(VAR)[ ,1], rep(NA, 24)),
                 forecast = c(rep(NA,132), recursive[, 1]))
 
-# = Plot = #
 dfm = melt(df,id.vars = "date")
 ggplot(data = dfm) + geom_line(aes(x = date, y = value, color = variable))+
   geom_hline(yintercept = mean(train[ ,1]), linetype = 2,color = "yellow")
+
+
+# Replication -------------------------------------------------------------
+
+for (i in 1:213) {
+  train = VAR.ts[1:225+i, ]
+  VARf <- VAR(train, p=12)
+  recursive = predict(VARf, n.ahead=1)
+  fcst=recursive$fcst$lRO[,"fcst"]
+  v[i]=fcst
+}
+
+test = subset(VAR.ts[, "lRO"],start=227,end = 439)
+RW = VAR.ts[-c(1:225), "lRO"]
+RWf.ts = ts(RW[1:212], frequency=12, start=c(1991, 12), end=c(2009, 8))
+VARf.ts = ts(v[1:212], frequency=12, start=c(1991, 12), end=c(2009, 8))
+
+#autoplot(subset(VAR.ts[, "lRO"], end = 438)) +
+autoplot(test, series = "Real Price") +
+  autolayer(VARf.ts, series="VARf") +
+  autolayer(RWf.ts, series="RWf") +
+  xlab("Time") + ylab("Log Price") +
+  ggtitle("Forecasting real price of WTI") +
+  guides(colour=guide_legend(title="Series:")) +
+  theme_economist() +
+  scale_color_economist()
+
+
+#FORECAST ACCURACY
+ac.rwf = accuracy(RWf.ts, test)
+ac.varf =accuracy(VARf.ts, test)
+
+PE_VAR=VARf.ts-test
+MSPE_VAR = mean((PE_VAR)^2)
+PE_RW = RWf.ts-test
+MSPE_RW = mean((PE_RW)^2)
+MSPE_VAR/MSPE_RW
+
+plot(ts(PE_VAR^2))
+lines(PE_RW^2, col = "red")
 
 
 # kode --------------------------------------------------------------------
@@ -400,45 +425,4 @@ get_statistics <- function(ts_df, h=1, start=c(1973, 1), end=c(2018, 6), est_per
 
 
 
-# Replication -------------------------------------------------------------
 
-for (i in 1:213) {
-  train = VAR.ts[1:225+i, ]
-  #test = VAR.ts[-c(1:363+i), ]
-  real = VAR.ts[-c(1:226), "lRO"]
-  RW = VAR.ts[-c(1:225), "lRO"]
-  ForecastRW = RW[1:212]
-  # = Estimate model and compute forecasts = #
-  VARf <- VAR(train, p=12)
-  recursive = predict(VARf, n.ahead=1)
-  #print(recursive$fcst$lRO)
-  #print(VARf)
-  fcst=recursive$fcst$lRO[,"fcst"]
-  v[i]=fcst
-  
-  
-  
-  #plot(ts(recursive$fcst$lRO[,"fcst"]))
-  #plot(ts(real[1:10]))
-  #plot(real, type ="l"))
-  PE_VAR=v[1:212]-real[1:212]
-  MSPE_VAR = mean((PE_VAR)^2)
-  
-  PE_RW = ForecastRW[1:212]-real[1:212]
-  MSPE_RW = mean((PE_RW)^2)
-  
-}
-
-MSPE_VAR
-MSPE_RW
-
-MSPE_VAR/MSPE_RW
-
-MSPE_RW/MSPE_VAR
-
-plot(ts(v))
-lines(real, col = "blue")
-lines(ForecastRW, col = "red")
-
-plot(ts(PE_VAR^2))
-lines(PE_RW^2, col = "red")
