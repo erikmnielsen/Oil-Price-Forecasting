@@ -31,6 +31,7 @@ data <- read_excel("Variable.xlsx")
 data <- as.data.frame(data)
 data$RO <- (data$WTI/(data$`CPI US`/100))
 data$lRO <- log(data$RO)
+data$l_diff_RO <- diff.xts(data$lRO, differences = 1)
 data$OP <- log(data$`World oil prod`) - lag.xts(log(data$`World oil prod`),k = 1) 
 data$OI <- (data$`OECD Pet inv`/data$`US Pet inv`)*data$`US crude inv`
 data$dOI <- diff.xts(data$OI,differences = 1)
@@ -230,6 +231,7 @@ f.var$forecast$lRO
 
 # VAR FORECASTS ALL 4 VARIABLES -------------------------------------------
 
+data.VAR <- data.xts[-1,c("Kilian","dOI","lRO","OP")]
 data.VAR <- data.xts[-1,c("World REA Index","dOI","lRO","OP")]
 VARselect(data.VAR,lag.max =  12)$selection
 VAR.ts <- ts(data.VAR,frequency=12,start=c(1973, 2), end=c(2018, 6))
@@ -247,7 +249,6 @@ RW = VAR.ts[-c(1:363), "lRO"]
 RWf.ts = ts(RW[1:181], frequency=12, start=c(2003, 6), end=c(2018, 6))
 VARf.ts = ts(v[1:181], frequency=12, start=c(2003, 6), end=c(2018, 6))
 
-
 autoplot(subset(VAR.ts[, "lRO"], end = 545)) +
 #autoplot(test) + #evt: series = "Real Price"
   autolayer(VARf.ts, series="VARf") +
@@ -257,6 +258,7 @@ autoplot(subset(VAR.ts[, "lRO"], end = 545)) +
   guides(colour=guide_legend(title="Forecasts:")) +
   theme_economist() +
   scale_color_economist()
+
 
 #Forecast Accuracy
 ac.rwf = accuracy(RWf.ts, test)
@@ -287,13 +289,14 @@ ggplot(data = dfm) + geom_line(aes(x = date, y = value, color = variable))+
 
 
 # Replication -------------------------------------------------------------
+data.VAR <- data.xts[-1,c("Kilian","dOI","lRO","OP")]
 
-for (i in 1:213) {
-  train = VAR.ts[1:225+i, ]
+for (i in 0:213) {
+  train = VAR.ts[1:(226+i), ]
   VARf <- VAR(train, p=12)
   recursive = predict(VARf, n.ahead=1)
   fcst=recursive$fcst$lRO[,"fcst"]
-  v[i]=fcst
+  v[i+1]=fcst
 }
 
 test = subset(VAR.ts[, "lRO"],start=227,end = 439)
