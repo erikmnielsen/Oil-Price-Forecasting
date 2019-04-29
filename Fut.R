@@ -7,6 +7,7 @@ Futures <- read_excel("Futures.xlsx",
                                     "numeric", "numeric", "numeric", 
                                     "numeric"))
 
+View(Futures)
 data <- read_excel("Variable.xlsx")
 data <- as.data.frame(data)
 data$RO <- (data$WTI/(data$`CPI US`/100))
@@ -74,7 +75,7 @@ PEf6<-datats[(1+k):319,"WTI"] - fut[1:(319-k),"CL6"]
 MSPEf6 <- mean(PEf6^2) 
 
 
-RW.fut6 <- lag(datats[1:(319-k),"WTI"], k = -3)
+RW.fut6 <- lag(datats[1:(319-k),"WTI"], k = -6)
 
 
 PE_RWft6 <- datats[(1+k):319,"WTI"] - RW.fut6 
@@ -96,7 +97,7 @@ PEf12<-datats[(1+k):319,"WTI"] - fut[1:(319-k),"CL12"]
 MSPEf12 <- mean(PEf12^2) 
 
 
-RW.fut12 <- lag(datats[1:(319-k),"WTI"], k = -3)
+RW.fut12 <- lag(datats[1:(319-k),"WTI"], k = -12)
 
 
 PE_RWft12 <- datats[(1+k):319,"WTI"] - RW.fut12 
@@ -112,7 +113,7 @@ autoplot(WTip12)+
   autolayer(futp12)+
   autolayer(RW.fut12_p)
 
-
+plot(PE_RWft12)
 
 # 2.0 Fut -----------------------------------------------------------------
 
@@ -129,3 +130,62 @@ MSPEf/MSPERWft
 futp<-ts(fut[1:318,1])
 WTip<-ts(datats[2:319,"WTI"])
 DF <- data.frame(futp, WTip, RW.fut)
+
+
+
+
+# Alternativ 1-month--------------------------------------------------------------------
+
+datats[1:318,"WTI"]*(1+ log(fut[1:318,"CL1"]/datats[1:318,"WTI"]))
+
+PEfalt <- datats[2:319,"WTI"] - (datats[1:318,"WTI"]*(1+ log(fut[1:318,"CL1"]/datats[1:318,"WTI"])))
+
+MSPEalt <- mean(PEfalt^2) 
+MSPEalt/MSPERWft
+
+
+  # Alternativ 3-month ------------------------------------------------------
+k <- 3
+
+PEfalt3 <- datats[(1+k):319,"WTI"] - (datats[1:(319-k),"WTI"]*(1+ log(fut[1:(319-k),"CL3"]/datats[1:(319-k),"WTI"])))
+
+MSPEalt3 <- mean(PEfalt3^2) 
+MSPEalt3/MSPERWft3
+
+
+# Alternativ 6 ------------------------------------------------------------
+
+k <- 6
+
+PEfalt6 <- datats[(1+k):319,"WTI"] - (datats[1:(319-k),"WTI"]*(1+ log(fut[1:(319-k),"CL6"]/datats[1:(319-k),"WTI"])))
+
+MSPEalt6 <- mean(PEfalt6^2) 
+MSPEalt6/MSPERWft6
+
+# Alternativ 12 -----------------------------------------------------------
+
+k <- 12
+
+PEfalt12 <- datats[(1+k):319,"WTI"] - (datats[1:(319-k),"WTI"]*(1+ log(fut[1:(319-k),"CL12"]/datats[1:(319-k),"WTI"])))
+
+MSPEalt12 <- mean(PEfalt12^2) 
+MSPEalt12/MSPERWft12
+
+
+# Genskab  -----------------------------------------------------------------
+
+
+PEf.test<-datats[2:213,"WTI"] - fut[1:212,"CL1"]
+MSPEf.test <- mean(PEf.test^2) 
+
+RW.fut.test <- ts(lag(datats[1:212,"WTI"], k = -1))
+
+PE_RWft.test <- datats[2:213,"WTI"] - RW.fut.test 
+MSPERWft.test <-  mean(PE_RWft.test^2) 
+MSPEf.test/MSPERWft.test
+
+futp<-ts(fut[1:318,1])
+WTip<-ts(datats[2:319,"WTI"])
+DF <- data.frame(futp, WTip, RW.fut)
+
+datats[2:213,"WTI"]
