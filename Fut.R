@@ -1,6 +1,6 @@
 library(readxl)
 
-Futures <- read_excel("~/R_Saves/Futures.xlsx", 
+Futures <- read_excel("Futures.xlsx", 
                       col_types = c("date", "numeric", "numeric", 
                                     "numeric", "numeric", "numeric", 
                                     "numeric", "numeric", "numeric", 
@@ -70,7 +70,7 @@ autoplot(WTip3)+
 
 # 6-months ----------------------------------------------------------------
 k <- 6
-PEf6<-datats[(1+k):319,"WTI"] - fut[1:(319-k),"CL3"]
+PEf6<-datats[(1+k):319,"WTI"] - fut[1:(319-k),"CL6"]
 MSPEf6 <- mean(PEf6^2) 
 
 
@@ -92,7 +92,7 @@ autoplot(WTip6)+
 
 # 12-months ---------------------------------------------------------------
 k <- 12
-PEf12<-datats[(1+k):319,"WTI"] - fut[1:(319-k),"CL3"]
+PEf12<-datats[(1+k):319,"WTI"] - fut[1:(319-k),"CL12"]
 MSPEf12 <- mean(PEf12^2) 
 
 
@@ -113,3 +113,19 @@ autoplot(WTip12)+
   autolayer(RW.fut12_p)
 
 
+
+# 2.0 Fut -----------------------------------------------------------------
+
+
+PEf<-datats[2:319,"WTI"] - fut[1:318,"CL1"]
+MSPEf <- mean(PEf^2) 
+
+RW.fut <- ts(lag(datats[1:318,"WTI"], k = -1))
+
+PE_RWft <- datats[2:319,"WTI"] - RW.fut 
+MSPERWft <-  mean(PE_RWft^2) 
+MSPEf/MSPERWft
+
+futp<-ts(fut[1:318,1])
+WTip<-ts(datats[2:319,"WTI"])
+DF <- data.frame(futp, WTip, RW.fut)
