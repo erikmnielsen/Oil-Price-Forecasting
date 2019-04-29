@@ -115,25 +115,6 @@ autoplot(WTip12)+
 
 plot(PE_RWft12)
 
-# 2.0 Fut -----------------------------------------------------------------
-
-
-PEf<-datats[2:319,"WTI"] - fut[1:318,"CL1"]
-MSPEf <- mean(PEf^2) 
-
-RW.fut <- ts(lag(datats[1:318,"WTI"], k = -1))
-
-PE_RWft <- datats[2:319,"WTI"] - RW.fut 
-MSPERWft <-  mean(PE_RWft^2) 
-MSPEf/MSPERWft
-
-futp<-ts(fut[1:318,1])
-WTip<-ts(datats[2:319,"WTI"])
-DF <- data.frame(futp, WTip, RW.fut)
-
-
-
-
 # Alternativ 1-month--------------------------------------------------------------------
 
 datats[1:318,"WTI"]*(1+ log(fut[1:318,"CL1"]/datats[1:318,"WTI"]))
@@ -178,14 +159,23 @@ MSPEalt12/MSPERWft12
 PEf.test<-datats[2:213,"WTI"] - fut[1:212,"CL1"]
 MSPEf.test <- mean(PEf.test^2) 
 
+
 RW.fut.test <- ts(lag(datats[1:212,"WTI"], k = -1))
 
 PE_RWft.test <- datats[2:213,"WTI"] - RW.fut.test 
 MSPERWft.test <-  mean(PE_RWft.test^2) 
 MSPEf.test/MSPERWft.test
 
-futp<-ts(fut[1:318,1])
-WTip<-ts(datats[2:319,"WTI"])
-DF <- data.frame(futp, WTip, RW.fut)
+# Genskab 12 --------------------------------------------------------------
+k <- 12
+PEf.test.12<-datats[(1+k):213,"WTI"] - fut[1:(213-k),"CL12"]
+MSPEf.test.12 <- mean(PEf.test.12^2) 
 
-datats[2:213,"WTI"]
+
+RW.fut.test.12 <- ts(lag(datats[1:(213-k),"WTI"], k = -12))
+
+PE_RWft.test.12 <- datats[(1+k):213,"WTI"] - RW.fut.test.12 
+MSPERWft.test.12 <-  mean(PE_RWft.test.12^2) 
+MSPEf.test.12/MSPERWft.test.12
+
+
