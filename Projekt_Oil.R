@@ -9,7 +9,7 @@ library(ggthemes)
 
 #library(dplyr)
 #library(timeSeries)
-#library(aTSA)
+library(aTSA)
 #library(rugarch)
 #library(fBasics)
 #library(fGarch)
@@ -31,6 +31,7 @@ data <- read_excel("Variable.xlsx")
 data <- as.data.frame(data)
 data$RO <- (data$WTI/(data$`CPI US`/100))
 data$lRO <- log(data$RO)
+data$l_diff_RO <- diff.xts(data$lRO, differences = 1)
 data$OP <- log(data$`World oil prod`) - lag.xts(log(data$`World oil prod`),k = 1) 
 data$OI <- (data$`OECD Pet inv`/data$`US Pet inv`)*data$`US crude inv`
 data$dOI <- diff.xts(data$OI,differences = 1)
@@ -68,10 +69,10 @@ fit.lin2 <- lm(d_WTI ~ 1)
 checkresiduals(fit.lin2)
 plot(ts(fit.lin2$residuals^2))
 
-testt <- ur.df(WTI,type="trend",lags = 10, selectlags = "AIC")
-testd <- ur.df(WTI,type="drift", lags = 10, selectlags = "AIC")
-testn <- ur.df(WTI,type="none", lags = 10, selectlags = "AIC")
-summary(testn)
+testt <- ur.df(WTI,type="trend",lags = 12)
+testd <- ur.df(WTI,type="drift", lags = 12)
+testn <- ur.df(WTI,type="none", lags = 12)
+summary(testt)
 
 Box.test(testn@res,lag=6, type="Lj")
 
@@ -87,12 +88,22 @@ REA = data.xts$`World REA Index`
 RO = data.xts$RO
 lRO = data.xts$lRO
 
-testROt <- ur.df(RO,type="trend",lags = 10, selectlags = "AIC")
+testROt <- ur.df(RO,type="trend",lags = 10, selectlags = "AIC") #Vælger 2 lags
+testROt <- ur.df(RO,type="trend",lags = 6)
 testROd <- ur.df(RO,type="drift", lags = 10, selectlags = "AIC")
-testROn <- ur.df(RO,type="none", lags = 10, selectlags = "AIC")
+testROd <- ur.df(RO,type="drift", lags = 6)
+
+
+ddRO = diff(RO)
+testROn <- ur.df(ddRO,type="drift", lags = 10, selectlags = "AIC")
 summary(testROt)
-summary(testROd)
+summary(testROd) #ved 6 lags er der unit root
 summary(testROn)
+
+
+fit.lin2 <- lm(RO ~ 1)
+checkresiduals(fit.lin2)
+adf.test(RO)
 
 Box.test(testROn@res,lag=1, type="Lj")
 
@@ -151,45 +162,75 @@ plot(REA)
 
 # Arima -------------------------------------------------------------------
 
-WTI["1973-01/2003-06"]
-plot(WTI)
+lROsub = subset(lRO.ts, end = 226)
+autoplot(lROsub)
 
-WTI.ts <- ts(WTI,frequency=12,start=c(1973, 1), end=c(2003, 6))
-autoplot(WTI.ts)
+testlROt <- ur.df(lROsub,type="trend",lags = 12, selectlags = "AIC")
+testlROd <- ur.df(lROsub,type="drift", lags = 12, selectlags = "AIC")
+testlROn <- ur.df(lRO,type="none", lags = 12, selectlags = "AIC")
+summary(testlROt)
+summary(testlROd)
+summary(testlROn)
 
-auto.arima(WTI)
+lROsub %>% diff() %>% ggtsdisplay(main="")
 
-fit <- arima(WTI.ts, order = c(1,1,0), include.mean=T)
-fit2 <- arima(WTI, order = c(0,1,2), include.mean=T)
-#fit3 <- arima(WTI, order = c(3,1,0), include.mean=T)
-#fit4 <- arima(WTI, order = c(4,1,0), include.mean=T)
-#fit5 <- arima(WTI, order = c(5,1,0), include.mean=T)
+lRO = data.xts$lRO["1973-02/2018-06"]
+lRO.ts <- ts(lRO,frequency=12,start=c(1973, 2), end=c(2018, 6))
+autoplot(lRO.ts)
 
+v = c(NA)
+for (i in 0:213) {
+  train = lRO.ts[1:(226+i), ]
+  arimaf = Arima(train, order=c(12,0,0))
+  recursive = predict(arimaf, n.ahead=1)
+  fcst=recursive$pred[1]
+  v[i+1]=fcst
+}
+
+test = subset(lRO.ts[, "lRO"],start=227,end = 439)
+RW = lRO.ts[-c(1:225), "lRO"]
+RWf.ts = ts(RW[1:213], frequency=12, start=c(1991, 12), end=c(2009, 8))
+arimaf.ts = ts(v[1:213], frequency=12, start=c(1991, 12), end=c(2009, 8))
+
+#autoplot(subset(lRO.ts, end = 438)) +
+  autoplot(test, series = "Real Price") +
+  autolayer(arimaf.ts, series="arima") +
+  #autolayer(RWf.ts, series="RWf") +
+  xlab("Time") + ylab("Log Price") +
+  ggtitle("Forecasting real price of WTI") +
+  guides(colour=guide_legend(title="Series:")) +
+  theme_economist() +
+  scale_color_economist()
+
+
+#Forecast Accuracy
+  ac.rwf = accuracy(RWf.ts, test)
+  ac.arf =accuracy(arimaf.ts, test)
+  PE_AR=arimaf.ts-test
+  MSPE_AR = mean((PE_AR)^2)
+  PE_RW = RWf.ts-test
+  MSPE_RW = mean((PE_RW)^2)
+  MSPE_AR/MSPE_RW #fraction of random walk - should be <1 to beat the RW
+  
+
+#Arima testing
+
+lROsub = subset(lRO.ts, end = 226)
+
+autofit = auto.arima(lROsub)
+summary(autofit)
+checkresiduals(autofit)
+pred1 <- predict(autofit, n.ahead= 1)
+
+fit = Arima(lROsub, order=c(12,0,0), include.mean = T)
 summary(fit)
-summary(fit2)
-
 checkresiduals(fit)
-checkresiduals(fit2)
+pred2 <- predict(fit, n.ahead= 1)
 
 plot(fit, type = c("ar"), xlab = "Real", ylab = "Imaginary")
 attributes(autoplot(fit))
 autoplot(fit)$data
-
 autoplot(forecast(fit))
-
-
-#prediction for 2006Q1
-pred1 <- predict(fit, n.ahead= 1)
-
-#prediction for 2006Q2
-den2 <- den["/2006-3"]
-fit2 <- arima(den2$dlden, order = c(2,0,0), include.mean=T)
-pred2 <- predict(fit2, n.ahead = 1)
-
-
-
-
-
 
 
 # VAR testing---------------------------------------------------------------------
@@ -230,26 +271,28 @@ f.var$forecast$lRO
 
 # VAR FORECASTS ALL 4 VARIABLES -------------------------------------------
 
+data.VAR <- data.xts[-1,c("Kilian","dOI","lRO","OP")]
+data.VAR <- data.xts[-1,c("Kilian","dOI","l_diff_RO","OP")]
 data.VAR <- data.xts[-1,c("World REA Index","dOI","lRO","OP")]
 VARselect(data.VAR,lag.max =  12)$selection
 VAR.ts <- ts(data.VAR,frequency=12,start=c(1973, 2), end=c(2018, 6))
+v=c(NA)
 
-
-for (i in 1:182) {
-  train = VAR.ts[1:363+i, ]
+for (i in 0:181) {
+  train = VAR.ts[1:(364+i), ]
   VARf <- VAR(train, p=12)
-  recursive = predict(VARf, n.ahead=3)
-  fcst=recursive$fcst$lRO[3,"fcst"]
-  v[i]=fcst
+  recursive = predict(VARf, n.ahead=1)
+  fcst=recursive$fcst$lRO[,"fcst"] #OBS
+  v[i+1]=fcst
 }
+
 test = subset(VAR.ts[, "lRO"],start=365,end = 545)
 RW = VAR.ts[-c(1:363), "lRO"]
 RWf.ts = ts(RW[1:181], frequency=12, start=c(2003, 6), end=c(2018, 6))
 VARf.ts = ts(v[1:181], frequency=12, start=c(2003, 6), end=c(2018, 6))
 
-
-autoplot(subset(VAR.ts[, "lRO"], end = 545)) +
-#autoplot(test) + #evt: series = "Real Price"
+#autoplot(subset(VAR.ts[, "lRO"], end = 545)) +
+autoplot(test) + #evt: series = "Real Price"
   autolayer(VARf.ts, series="VARf") +
   autolayer(RWf.ts, series="RWf") +
   xlab("Time") + ylab("Log Price") +
@@ -257,6 +300,7 @@ autoplot(subset(VAR.ts[, "lRO"], end = 545)) +
   guides(colour=guide_legend(title="Forecasts:")) +
   theme_economist() +
   scale_color_economist()
+
 
 #Forecast Accuracy
 ac.rwf = accuracy(RWf.ts, test)
@@ -268,41 +312,54 @@ PE_RW = RWf.ts-test
 MSPE_RW = mean((PE_RW)^2)
 MSPE_VAR/MSPE_RW #fraction of random walk - should be <1 to beat the RW
 
-#Resultater (opdateres)
-##12 lags, h=1: MSPE=1.135761
-##24 lags, h=1: MSPE=1.493964
-
 plot(ts(PE_VAR^2))
-lines(PE_RW^2, col = "red")
+lines(ts(PE_RW^2), col = "red")
 
-#andet plot
-df = data.frame(date = as.Date(rownames(VAR.ts)),
-                RealOilPrice  = VAR.ts[,"lRO"],
-                fitted=c(rep(NA, 3), fitted(VAR)[ ,1], rep(NA, 24)),
-                forecast = c(rep(NA,132), recursive[, 1]))
 
-dfm = melt(df,id.vars = "date")
-ggplot(data = dfm) + geom_line(aes(x = date, y = value, color = variable))+
-  geom_hline(yintercept = mean(train[ ,1]), linetype = 2,color = "yellow")
+# 4 Variables, h=3 ---------------------------------------------------------
+
+for (i in 0:181) {
+  train = VAR.ts[1:(364+i), ]
+  VARf <- VAR(train, p=12)
+  recursive = predict(VARf, n.ahead=3)
+  fcst=recursive$fcst$lRO[3,"fcst"]
+  v[i+1]=fcst
+}
+
+test = subset(VAR.ts[, "lRO"],start=367,end = 545)
+RW = VAR.ts[-c(1:363), "lRO"]
+RWf.ts = ts(RW[1:179], frequency=12, start=c(2003, 8), end=c(2018, 6))
+VARf.ts = ts(v[1:179], frequency=12, start=c(2003, 8), end=c(2018, 6))
+
+PE_VAR=VARf.ts-test
+MSPE_VAR = mean((PE_VAR)^2)
+PE_RW = RWf.ts-test
+MSPE_RW = mean((PE_RW)^2)
+MSPE_VAR/MSPE_RW #fraction of random walk - should be <1 to beat the RW
+
+
 
 
 # Replication -------------------------------------------------------------
 
-for (i in 1:213) {
-  train = VAR.ts[1:225+i, ]
+data.VAR <- data.xts[-1,c("Kilian","dOI","lRO","OP")]
+VAR.ts <- ts(data.VAR,frequency=12,start=c(1973, 2), end=c(2018, 6))
+
+for (i in 0:213) {
+  train = VAR.ts[1:(226+i), ]
   VARf <- VAR(train, p=12)
   recursive = predict(VARf, n.ahead=1)
   fcst=recursive$fcst$lRO[,"fcst"]
-  v[i]=fcst
+  v[i+1]=fcst
 }
 
 test = subset(VAR.ts[, "lRO"],start=227,end = 439)
 RW = VAR.ts[-c(1:225), "lRO"]
-RWf.ts = ts(RW[1:212], frequency=12, start=c(1991, 12), end=c(2009, 8))
-VARf.ts = ts(v[1:212], frequency=12, start=c(1991, 12), end=c(2009, 8))
+RWf.ts = ts(RW[1:213], frequency=12, start=c(1991, 12), end=c(2009, 8))
+VARf.ts = ts(v[1:213], frequency=12, start=c(1991, 12), end=c(2009, 8))
 
-#autoplot(subset(VAR.ts[, "lRO"], end = 438)) +
-autoplot(test, series = "Real Price") +
+autoplot(subset(VAR.ts[, "lRO"], end = 438)) +
+#autoplot(test, series = "Real Price") +
   autolayer(VARf.ts, series="VARf") +
   autolayer(RWf.ts, series="RWf") +
   xlab("Time") + ylab("Log Price") +
@@ -316,6 +373,7 @@ autoplot(test, series = "Real Price") +
 ac.rwf = accuracy(RWf.ts, test)
 ac.varf =accuracy(VARf.ts, test)
 
+
 PE_VAR=VARf.ts-test
 MSPE_VAR = mean((PE_VAR)^2)
 PE_RW = RWf.ts-test
@@ -324,105 +382,6 @@ MSPE_VAR/MSPE_RW
 
 plot(ts(PE_VAR^2))
 lines(PE_RW^2, col = "red")
-
-
-# kode --------------------------------------------------------------------
-
-
-
-get_statistics <- function(ts_df, h=1, start=c(1973, 1), end=c(2018, 6), est_periods_OOS = 20) {
-  #1. Historical mean model
-  #avg   <- mean(window(ts_df, start, end), na.rm=TRUE)
-  #IS_error_N <- (window(ts_df, start, end) - avg)
-  #2. OLS model
-  reg <- VAR
-  IS_error_A <- reg$residuals
-  ### 
-  ####OOS ANALYSIS
-  OOS_error_N <- numeric(end - start - est_periods_OOS) 
-  OOS_error_A <- numeric(end - start - est_periods_OOS)
-  #Only use information that is available up to the time at which the forecast is made
-  j <- 0
-  for (i in (start + est_periods_OOS):(end-1)) {
-    j <- j + 1
-    #Get the actual ERP that you want to predict
-    actual_ERP <- as.numeric(window(ts_df, i+1, i+1)[, dep])
-    #1. Historical mean model
-    OOS_error_N[j] <- actual_ERP - mean(window(ts_df, start, i)[, dep], na.rm=TRUE)
-    #2. OLS model
-    reg_OOS <- dyn$lm(eval(parse(text=dep)) ~ lag(eval(parse(text=indep)), -1), 
-                      data=window(ts_df, start, i))
-    #Compute_error
-    df <- data.frame(x=as.numeric(window(ts_df, i, i)[, indep]))
-    names(df) <- indep
-    pred_ERP   <- predict.lm(reg_OOS, newdata=df)
-    OOS_error_A[j] <-  pred_ERP - actual_ERP
-  }
-  #Compute statistics 
-  MSE_N <- mean(OOS_error_N^2)
-  MSE_A <- mean(OOS_error_A^2)
-  T <- length(!is.na(ts_df[, dep]))
-  OOS_R2  <- 1 - MSE_A/MSE_N
-  #Is the -1 enough (maybe -2 needed because of lag)?
-  OOS_oR2 <- OOS_R2 - (1-OOS_R2)*(reg$df.residual)/(T - 1) 
-  dRMSE <- sqrt(MSE_N) - sqrt(MSE_A)
-  ##
-  #### CREATE PLOT
-  IS  <- cumsum(IS_error_N[2:length(IS_error_N)]^2)-cumsum(IS_error_A^2)
-  OOS <- cumsum(OOS_error_N^2)-cumsum(OOS_error_A^2)
-  df  <- data.frame(x=seq.int(from=start + 1 + est_periods_OOS, to=end), 
-                    IS=IS[(1 + est_periods_OOS):length(IS)], 
-                    OOS=OOS) #Because you lose one observation due to the lag
-  #Shift IS errors vertically, so that the IS line begins 
-  # at zero on the date of first OOS prediction. (see Goyal/Welch (2008, p. 1465))
-  df$IS <- df$IS - df$IS[1] 
-  df  <- melt(df, id.var="x") 
-  plotGG <- ggplot(df) + 
-    geom_line(aes(x=x, y=value,color=variable)) + 
-    geom_rect(data=data.frame(),#Needed by ggplot2, otherwise not transparent
-              aes(xmin=1973, xmax=1975,ymin=-0.2,ymax=0.2), 
-              fill='red',
-              alpha=0.1) + 
-    geom_line(aes(x=x, y=value,color=variable)) + 
-    geom_rect(data=data.frame(),#Needed by ggplot2, otherwise not transparent
-              aes(xmin=1998, xmax=2000,ymin=-0.2,ymax=0.2), 
-              fill='brown',
-              alpha=0.1) + 
-    geom_rect(data=data.frame(),#Needed by ggplot2, otherwise not transparent
-              aes(xmin=2007, xmax=2009,ymin=-0.2,ymax=0.2), 
-              fill='yellow',
-              alpha=0.1) + 
-    geom_rect(data=data.frame(),#Needed by ggplot2, otherwise not transparent
-              aes(xmin=1929, xmax=1931,ymin=-0.2,ymax=0.2), 
-              fill='purple',
-              alpha=0.1) + 
-    scale_y_continuous('Cumulative SSE Difference', limits=c(-0.23, 0.23)) + 
-    scale_x_continuous('Year')
-  ##
-  oos.sequence <- {(actual_ERP - avg)^2 - 
-      (actual_ERP - reg_OOS$fitted)^2 + 
-      (avg - reg_OOS$fitted)^2}
-  mu <- mean(oos.sequence)
-  
-  
-  return(list(IS_error_N = IS_error_N,
-              IS_error_A = reg$residuals,
-              OOS_error_N = OOS_error_N,
-              OOS_error_A = OOS_error_A,
-              IS_R2 = summary(reg)$r.squared, 
-              IS_aR2 = summary(reg)$adj.r.squared, 
-              OOS_R2  = OOS_R2,
-              OOS_oR2 = OOS_oR2,
-              dfres = reg$df.residual,
-              dRMSE = dRMSE,
-              MSE_A = MSE_A,
-              MSE_N = MSE_N,
-              dep = mean(reg_OOS$fitted-avg),
-              mu = mu,
-              
-              plotGG = plotGG))
-}
-
 
 
 
