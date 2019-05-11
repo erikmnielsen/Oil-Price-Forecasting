@@ -55,6 +55,12 @@ data.dVAR <- data.xts[-1,c("Kilian","dOI","l_diff_RO","OP")]
 dVAR.ts <- ts(data.dVAR,frequency=12,start=c(1973, 2), end=c(2018, 6))
 }
 
+
+
+
+
+
+
 nc=23
 x=22
 m_h1=matrix(nrow=182, ncol=nc)
@@ -134,75 +140,99 @@ test_h12 = subset(VAR.ts[, "lRO"],start=373,end = 545)
 test_dh12 = subset(dVAR.ts[, "l_diff_RO"],start=373,end = 545)
 
 RW = VAR.ts[-c(1:363), "lRO"]
-dRW = dVAR.ts[-c(1:363), "l_diff_RO"]
 
 RWf_h1.ts = ts(RW[1:181], frequency=12, start=c(2003, 6), end=c(2018, 6))
-dRWf_h1.ts = ts(dRW[1:181], frequency=12, start=c(2003, 6), end=c(2018, 6))
 RWf_h3.ts = ts(RW[1:179], frequency=12, start=c(2003, 8), end=c(2018, 6))
-dRWf_h3.ts = ts(dRW[1:179], frequency=12, start=c(2003, 8), end=c(2018, 6))
 RWf_h6.ts = ts(RW[1:177], frequency=12, start=c(2003, 10), end=c(2018, 6))
-dRWf_h6.ts = ts(dRW[1:177], frequency=12, start=c(2003, 10), end=c(2018, 6))
 RWf_h9.ts = ts(RW[1:175], frequency=12, start=c(2003, 12), end=c(2018, 6))
-dRWf_h9.ts = ts(dRW[1:175], frequency=12, start=c(2003, 12), end=c(2018, 6))
 RWf_h12.ts = ts(RW[1:173], frequency=12, start=c(2004, 2), end=c(2018, 6))
-dRWf_h12.ts = ts(dRW[1:173], frequency=12, start=c(2004, 2), end=c(2018, 6))
 }
 
-m=matrix(nrow=nc, ncol=10)
+m=matrix(nrow=nc, ncol=15)
 
 for (i in 1:nc) {
   VARf.ts = ts(m_h1[1:181,i], frequency=12, start=c(2003, 6), end=c(2018, 6))
   if(i<x){
-    m[i,1]=mean((VARf.ts-test_h1)^2)/mean((RWf_h1.ts-test_h1)^2) 
-    m[i,2]=hit.ratio(y=test_h1,y.hat=VARf.ts,d=FALSE)
+    PE.VAR=VARf.ts-test_h1
+    PE.RW=RWf_h1.ts-test_h1
+    m[i,1]=mean((PE.VAR)^2)/mean((PE.RW)^2)
+    m[i,2]=dm.test(PE.VAR, PE.RW, alternative = "two.sided", h=1, power=2)$p.value
+    m[i,3]=hit.ratio(y=test_h1, y.hat=VARf.ts, d=FALSE)
   } else{
-    m[i,1]=mean((VARf.ts-test_dh1)^2)/mean((dRWf_h1.ts-test_dh1)^2)
-    m[i,2]=hit.ratio(y=test_dh1,y.hat=VARf.ts,d=FALSE)
+    PE.dVAR=VARf.ts-test_dh1
+    PE.dRW=test_dh1
+    m[i,1]=mean((PE.dVAR)^2)/mean((PE.dRW)^2)
+    m[i,2]=dm.test(PE.dVAR, PE.dRW, alternative = "two.sided", h=1, power=2)$p.value
+    m[i,3]=hit.ratio(y=test_dh1,y.hat=VARf.ts,d=FALSE)
   }
 }
 for (i in 1:nc) {
   VARf.ts = ts(m_h3[1:179,i], frequency=12, start=c(2003, 8), end=c(2018, 6))
   if(i<x){
-    m[i,3]=mean((VARf.ts-test_h3)^2)/mean((RWf_h3.ts-test_h3)^2)
-    m[i,4]=hit.ratio(y=test_h3,y.hat=VARf.ts,d=FALSE) 
+    PE.VAR=VARf.ts-test_h3
+    PE.RW=RWf_h3.ts-test_h3
+    m[i,4]=mean((PE.VAR)^2)/mean((PE.RW)^2)
+    m[i,5]=dm.test(PE.VAR, PE.RW, alternative = "two.sided", h=3, power=2)$p.value
+    m[i,6]=hit.ratio(y=test_h3,y.hat=VARf.ts,d=FALSE) 
   } else{
-    m[i,3]=mean((VARf.ts-test_dh3)^2)/mean((dRWf_h3.ts-test_dh3)^2)
-    m[i,4]=hit.ratio(y=test_dh3,y.hat=VARf.ts,d=FALSE)
+    PE.dVAR=VARf.ts-test_dh3
+    PE.dRW=test_dh3
+    m[i,4]=mean((PE.dVAR)^2)/mean((PE.dRW)^2)
+    m[i,5]=dm.test(PE.dVAR, PE.dRW, alternative = "two.sided", h=3, power=2)$p.value
+    m[i,6]=hit.ratio(y=test_dh3,y.hat=VARf.ts,d=FALSE)
   }
 }
 for (i in 1:nc) {
   VARf.ts = ts(m_h6[1:177,i], frequency=12, start=c(2003, 10), end=c(2018, 6))
   if(i<x){
-    m[i,5]=mean((VARf.ts-test_h6)^2)/mean((RWf_h6.ts-test_h6)^2)
-    m[i,6]=hit.ratio(y=test_h6,y.hat=VARf.ts,d=FALSE)
+    PE.VAR=VARf.ts-test_h6
+    PE.RW=RWf_h6.ts-test_h6
+    m[i,7]=mean((PE.VAR)^2)/mean((PE.RW)^2)
+    m[i,8]=dm.test(PE.VAR, PE.RW, alternative = "two.sided", h=6, power=2)$p.value
+    m[i,9]=hit.ratio(y=test_h6,y.hat=VARf.ts,d=FALSE)
   } else{
-    m[i,5]=mean((VARf.ts-test_dh6)^2)/mean((dRWf_h6.ts-test_dh6)^2)
-    m[i,6]=hit.ratio(y=test_dh6,y.hat=VARf.ts,d=FALSE)
+    PE.dVAR=VARf.ts-test_dh6
+    PE.dRW=test_dh6
+    m[i,7]=mean((PE.dVAR^2))/ mean((PE.dRW)^2)
+    m[i,8]=dm.test(PE.dVAR, PE.dRW, alternative = "two.sided", h=6, power=2)$p.value
+    m[i,9]=hit.ratio(y=test_dh6,y.hat=VARf.ts,d=FALSE)
   }
 }
 for (i in 1:nc) {
   VARf.ts = ts(m_h9[1:175,i], frequency=12, start=c(2003, 12), end=c(2018, 6))
   if(i<x){
-    m[i,7]=mean((VARf.ts-test_h9)^2)/mean((RWf_h9.ts-test_h9)^2)
-    m[i,8]=hit.ratio(y=test_h9,y.hat=VARf.ts,d=FALSE)
+    PE.VAR=VARf.ts-test_h9
+    PE.RW=RWf_h9.ts-test_h9
+    m[i,10]=mean((PE.VAR)^2)/mean((PE.RW)^2)
+    m[i,11]=dm.test(PE.VAR, PE.RW, alternative = "two.sided", h=9, power=2)$p.value
+    m[i,12]=hit.ratio(y=test_h9,y.hat=VARf.ts,d=FALSE)
   } else{
-    m[i,7]=mean((VARf.ts-test_dh9)^2)/mean((dRWf_h9.ts-test_dh9)^2)
-    m[i,8]=hit.ratio(y=test_dh9,y.hat=VARf.ts,d=FALSE)
+    PE.dVAR=VARf.ts-test_dh9
+    PE.dRW=test_dh9
+    m[i,10]=mean((PE.dVAR^2))/ mean((PE.dRW)^2)
+    m[i,11]=dm.test(PE.dVAR, PE.dRW, alternative = "two.sided", h=9, power=2)$p.value
+    m[i,12]=hit.ratio(y=test_dh9,y.hat=VARf.ts,d=FALSE)
   }
 }
 for (i in 1:nc) {
   VARf.ts = ts(m_h12[1:173,i], frequency=12, start=c(2004, 2), end=c(2018, 6))
   if(i<x){
-    m[i,9]=mean((VARf.ts-test_h12)^2)/mean((RWf_h12.ts-test_h12)^2)
-    m[i,10]=hit.ratio(y=test_h12,y.hat=VARf.ts,d=FALSE) 
+    PE.VAR=VARf.ts-test_h12
+    PE.RW=RWf_h12.ts-test_h12
+    m[i,13]=mean((PE.VAR)^2)/mean((PE.RW)^2)
+    m[i,14]=dm.test(PE.VAR, PE.RW, alternative = "two.sided", h=12, power=2)$p.value
+    m[i,15]=hit.ratio(y=test_h12,y.hat=VARf.ts,d=FALSE) 
   } else{
-    m[i,9]=mean((VARf.ts-test_dh12)^2)/mean((dRWf_h12.ts-test_dh12)^2)
-    m[i,10]=hit.ratio(y=test_dh12,y.hat=VARf.ts,d=FALSE)
+    PE.dVAR=VARf.ts-test_dh12
+    PE.dRW=test_dh12
+    m[i,13]=mean((PE.dVAR^2))/ mean((PE.dRW)^2)
+    m[i,14]=dm.test(PE.dVAR, PE.dRW, alternative = "two.sided", h=12, power=2)$p.value
+    m[i,15]=hit.ratio(y=test_dh12,y.hat=VARf.ts,d=FALSE)
   }
 }
 
-colnames(m) = c("h=1","SR","h=3","SR","h=6","SR","h=9","SR","h=12","SR")
-p = c(1,12,24,1,12,24,1,12,24,1,12,24,1,12,24,1,12,24,1,12,24,1,12)
+colnames(m) = c("h=1","p","SR","h=3","p","SR","h=6","p","SR","h=9","p","SR","h=12","p","SR")
+p = c(1,12,24,1,12,24,1,12,24,1,12,24,1,12,24,1,12,24,1,12,24,12,24)
 m = cbind(p, m)
 
 m.df = as.data.frame(m, row.names = c("Killian1","Killian2","Killian3",
@@ -217,6 +247,26 @@ m.df = as.data.frame(m, row.names = c("Killian1","Killian2","Killian3",
 m.df =round(m.df, digits = 3)
 grid.table(m.df)
 m.df
+
+
+VARf.ts = ts(m_h1[1:181,2], frequency=12, start=c(2003, 6), end=c(2018, 6))
+PE.VAR=VARf.ts-test_h1
+PE.RW=RWf_h1.ts-test_h1
+mean((VARf.ts-test_h1)^2)/mean((RWf_h1.ts-test_h1)^2)
+acc=accuracy(VARf.ts,test_h1)
+
+autoplot(PE.VAR) +
+  autolayer(PE.RW)
+
+
+dm.test(PE.VAR, PE.RW, alternative = "two.sided", h=1, power=2)
+
+
+
+
+dm.test(PE.VAR, PE.RW, alternative = "less", h=9, power=2)$p.value
+
+
 
 #autoplot(subset(VAR.ts[, "lRO"], end = 545)) +
 autoplot(test) + #evt: series = "Real Price"
