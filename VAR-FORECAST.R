@@ -1,4 +1,4 @@
-rm(list=ls(all=T)) 
+rm(list=ls(all=T))
 
 library(xts)
 library(fpp2)
@@ -78,7 +78,7 @@ for (j in 1:nc){
     train5 = VAR5.ts[1:(364+i), ]
     train6 = VAR6.ts[1:(364+i), ]
     train7 = VAR7.ts[1:(364+i), ]
-    traind = dVAR.ts[1:(364+0), ]
+    traind = dVAR.ts[1:(364+i), ]
     
     if (j==1){VARf <- VAR(train, p=1)}
     if (j==2){VARf <- VAR(train, p=12)}
@@ -170,7 +170,6 @@ for (i in 1:nc) {
     m[i,4]=eriksPT_test(test_dh1, VARf.ts)[pt]
   }
 }
-
 for (i in 1:nc) {
   VARf.ts = ts(m_h3[1:179,i], frequency=12, start=c(2003, 8), end=c(2018, 6))
   if(i<x){
@@ -253,7 +252,7 @@ for (i in 1:nc) {
 }
 
 
-colnames(m) = c("h=1","p","SR","h=3","p","SR","h=6","p","SR","h=9","p","SR","h=12","p","SR")
+colnames(m) = c("h=1","pv","SR","pv","h=3","pv","SR","pv","h=6","pv","SR","pv","h=9","pv","SR","pv","h=12","pv","SR","pv")
 p = c(1,12,24,1,12,24,1,12,24,1,12,24,1,12,24,1,12,24,1,12,24,12,24)
 m = cbind(p, m)
 
@@ -286,7 +285,7 @@ eriksPT_test=function(Actual, Forecast){
   
   delta_obsx=as.matrix(cbind(ifelse(obsx-Lag(obsx)>0,1,0)[-1])) #calc change of actual (delta)
   delta_fcst=as.matrix(cbind(ifelse(fcst-Lag(fcst)>0,1,0)[-1])) #calc change of forecast (delta)
-  TrFa=ifelse(delta_yt-delta_xt==0, 1, 0)
+  TrFa=ifelse(delta_obsx-delta_fcst==0, 1, 0)
   
   n=nrow(delta_obsx)
   Pyz=mean(TrFa)
@@ -296,18 +295,18 @@ eriksPT_test=function(Actual, Forecast){
   v=(p%*%(1-p))/n
   w=(((2%*%Pz-1)^2%*%Py%*%(1-Py))/n)+(((2%*%Py-1)^2%*%Pz%*%(1-Pz))/n)+((4%*%Py%*%Pz%*%(1-Py)%*%(1-Pz))/n^2)
   
-  Sn=((p%*%(1-p))/n)^(-1/2)*(Pyz-p)
-  Sn2=(Pyz-p)/sqrt(((Pyz%*%(1-Pyz))/n)-w)
-  PT=(Pyz-p)/sqrt(v-w)
-  pv=1-dnorm(PT)
+  Sn=((p%*%(1-p))/n)^(-1/2)*(Pyz-p) #sidste ligning s.461 i Timmermann
+  Sn2=(Pyz-p)/sqrt(((Pyz%*%(1-Pyz))/n)-w) #ligning 6 i Timmermann
+  PT=(Pyz-p)/sqrt(v-w) #http://www.real-statistics.com/time-series-analysis/forecasting-accuracy/pesaran-timmermann-test/
+  pv=1-pnorm(PT)
   summary=c(PT,pv)
   names(summary)=c("PT statistic","p.value")
-  print(summary)
-  print(Sn)
-  print(Sn2)
+  summary
+  #print(Sn)
+  #print(Sn2)
 }
 
-nwPT_test=function(Actual,Forecast){
+#nwPT_test=function(Actual,Forecast){
   
   yt=Actual #assign actual to yt to make code shorter  
   xt=Forecast #assign forecast to xt...  
