@@ -10,6 +10,9 @@ library(ggthemes)
 library(fDMA)
 library(gridExtra)
 library(grid)
+library(rugarch)
+library(quantmod)
+library(tidyr)
 
 # VAR FORECASTS ALL 4 VARIABLES
 
@@ -55,10 +58,7 @@ data.dVAR <- data.xts[-1,c("Kilian","dOI","l_diff_RO","OP")]
 dVAR.ts <- ts(data.dVAR,frequency=12,start=c(1973, 2), end=c(2018, 6))
 }
 
-
-
-
-
+roots(VARf, modulus = TRUE)
 
 
 nc=23
@@ -78,7 +78,7 @@ for (j in 1:nc){
     train5 = VAR5.ts[1:(364+i), ]
     train6 = VAR6.ts[1:(364+i), ]
     train7 = VAR7.ts[1:(364+i), ]
-    traind = dVAR.ts[1:(364+i), ]
+    traind = dVAR.ts[1:(364+0), ]
     
     if (j==1){VARf <- VAR(train, p=1)}
     if (j==2){VARf <- VAR(train, p=12)}
@@ -126,7 +126,7 @@ for (j in 1:nc){
 }
 
 
-# Forecast Accuracy -----------------------------------------------------------------------
+# Forecast Evaluation -----------------------------------------------------------------------
 {
 test_h1 = subset(VAR.ts[, "lRO"],start=365,end = 545)
 test_dh1 = subset(dVAR.ts[, "l_diff_RO"],start=365,end = 545)
@@ -148,38 +148,47 @@ RWf_h9.ts = ts(RW[1:175], frequency=12, start=c(2003, 12), end=c(2018, 6))
 RWf_h12.ts = ts(RW[1:173], frequency=12, start=c(2004, 2), end=c(2018, 6))
 }
 
-m=matrix(nrow=nc, ncol=15)
-
+m=matrix(nrow=nc, ncol=20)
+pw=1
+pt=2
+  
 for (i in 1:nc) {
   VARf.ts = ts(m_h1[1:181,i], frequency=12, start=c(2003, 6), end=c(2018, 6))
   if(i<x){
     PE.VAR=VARf.ts-test_h1
     PE.RW=RWf_h1.ts-test_h1
     m[i,1]=mean((PE.VAR)^2)/mean((PE.RW)^2)
-    m[i,2]=dm.test(PE.VAR, PE.RW, alternative = "two.sided", h=1, power=2)$p.value
-    m[i,3]=hit.ratio(y=test_h1, y.hat=VARf.ts, d=FALSE)
+    m[i,2]=dm.test(PE.VAR, PE.RW, alternative = "two.sided", h=1, power=pw)$p.value
+    m[i,3]=MDirAcc(test_h1, VARf.ts)
+    m[i,4]=eriksPT_test(test_h1, VARf.ts)[pt]
   } else{
     PE.dVAR=VARf.ts-test_dh1
     PE.dRW=test_dh1
     m[i,1]=mean((PE.dVAR)^2)/mean((PE.dRW)^2)
-    m[i,2]=dm.test(PE.dVAR, PE.dRW, alternative = "two.sided", h=1, power=2)$p.value
-    m[i,3]=hit.ratio(y=test_dh1,y.hat=VARf.ts,d=FALSE)
+    m[i,2]=dm.test(PE.dVAR, PE.dRW, alternative = "two.sided", h=1, power=pw)$p.value
+    m[i,3]=MDirAcc(test_dh1, VARf.ts)
+    m[i,4]=eriksPT_test(test_dh1, VARf.ts)[pt]
   }
 }
+
 for (i in 1:nc) {
   VARf.ts = ts(m_h3[1:179,i], frequency=12, start=c(2003, 8), end=c(2018, 6))
   if(i<x){
     PE.VAR=VARf.ts-test_h3
     PE.RW=RWf_h3.ts-test_h3
-    m[i,4]=mean((PE.VAR)^2)/mean((PE.RW)^2)
-    m[i,5]=dm.test(PE.VAR, PE.RW, alternative = "two.sided", h=3, power=2)$p.value
-    m[i,6]=hit.ratio(y=test_h3,y.hat=VARf.ts,d=FALSE) 
+    m[i,5]=mean((PE.VAR)^2)/mean((PE.RW)^2)
+    m[i,6]=dm.test(PE.VAR, PE.RW, alternative = "two.sided", h=3, power=pw)$p.value
+    #m[i,7]=hit.ratio(y=test_h3,y.hat=VARf.ts,d=FALSE)
+    m[i,7]=MDirAcc(test_h3, VARf.ts)
+    m[i,8]=eriksPT_test(test_h3, VARf.ts)[pt]
   } else{
     PE.dVAR=VARf.ts-test_dh3
     PE.dRW=test_dh3
-    m[i,4]=mean((PE.dVAR)^2)/mean((PE.dRW)^2)
-    m[i,5]=dm.test(PE.dVAR, PE.dRW, alternative = "two.sided", h=3, power=2)$p.value
-    m[i,6]=hit.ratio(y=test_dh3,y.hat=VARf.ts,d=FALSE)
+    m[i,5]=mean((PE.dVAR)^2)/mean((PE.dRW)^2)
+    m[i,6]=dm.test(PE.dVAR, PE.dRW, alternative = "two.sided", h=3, power=pw)$p.value
+    #m[i,7]=hit.ratio(y=test_dh3,y.hat=VARf.ts,d=FALSE)
+    m[i,7]=MDirAcc(test_dh3, VARf.ts)
+    m[i,8]=eriksPT_test(test_dh3, VARf.ts)[pt]
   }
 }
 for (i in 1:nc) {
@@ -187,15 +196,19 @@ for (i in 1:nc) {
   if(i<x){
     PE.VAR=VARf.ts-test_h6
     PE.RW=RWf_h6.ts-test_h6
-    m[i,7]=mean((PE.VAR)^2)/mean((PE.RW)^2)
-    m[i,8]=dm.test(PE.VAR, PE.RW, alternative = "two.sided", h=6, power=2)$p.value
-    m[i,9]=hit.ratio(y=test_h6,y.hat=VARf.ts,d=FALSE)
+    m[i,9]=mean((PE.VAR)^2)/mean((PE.RW)^2)
+    m[i,10]=dm.test(PE.VAR, PE.RW, alternative = "two.sided", h=6, power=pw)$p.value
+    #m[i,11]=hit.ratio(y=test_h6,y.hat=VARf.ts,d=FALSE)
+    m[i,11]=MDirAcc(test_h6, VARf.ts)
+    m[i,12]=eriksPT_test(test_h6, VARf.ts)[pt]
   } else{
     PE.dVAR=VARf.ts-test_dh6
     PE.dRW=test_dh6
-    m[i,7]=mean((PE.dVAR^2))/ mean((PE.dRW)^2)
-    m[i,8]=dm.test(PE.dVAR, PE.dRW, alternative = "two.sided", h=6, power=2)$p.value
-    m[i,9]=hit.ratio(y=test_dh6,y.hat=VARf.ts,d=FALSE)
+    m[i,9]=mean((PE.dVAR^2))/ mean((PE.dRW)^2)
+    m[i,10]=dm.test(PE.dVAR, PE.dRW, alternative = "two.sided", h=6, power=pw)$p.value
+    #m[i,11]=hit.ratio(y=test_dh6,y.hat=VARf.ts,d=FALSE)
+    m[i,11]=MDirAcc(test_dh6, VARf.ts)
+    m[i,12]=eriksPT_test(test_dh6, VARf.ts)[pt]
   }
 }
 for (i in 1:nc) {
@@ -203,15 +216,19 @@ for (i in 1:nc) {
   if(i<x){
     PE.VAR=VARf.ts-test_h9
     PE.RW=RWf_h9.ts-test_h9
-    m[i,10]=mean((PE.VAR)^2)/mean((PE.RW)^2)
-    m[i,11]=dm.test(PE.VAR, PE.RW, alternative = "two.sided", h=9, power=2)$p.value
-    m[i,12]=hit.ratio(y=test_h9,y.hat=VARf.ts,d=FALSE)
+    m[i,13]=mean((PE.VAR)^2)/mean((PE.RW)^2)
+    m[i,14]=dm.test(PE.VAR, PE.RW, alternative = "two.sided", h=9, power=pw)$p.value
+    #m[i,15]=hit.ratio(y=test_h9,y.hat=VARf.ts,d=FALSE)
+    m[i,15]=MDirAcc(test_h9, VARf.ts)
+    m[i,16]=eriksPT_test(test_h9, VARf.ts)[pt]
   } else{
     PE.dVAR=VARf.ts-test_dh9
     PE.dRW=test_dh9
-    m[i,10]=mean((PE.dVAR^2))/ mean((PE.dRW)^2)
-    m[i,11]=dm.test(PE.dVAR, PE.dRW, alternative = "two.sided", h=9, power=2)$p.value
-    m[i,12]=hit.ratio(y=test_dh9,y.hat=VARf.ts,d=FALSE)
+    m[i,13]=mean((PE.dVAR^2))/ mean((PE.dRW)^2)
+    m[i,14]=dm.test(PE.dVAR, PE.dRW, alternative = "two.sided", h=9, power=pw)$p.value
+    #m[i,15]=hit.ratio(y=test_dh9,y.hat=VARf.ts,d=FALSE)
+    m[i,15]=MDirAcc(test_dh9, VARf.ts)
+    m[i,16]=eriksPT_test(test_dh9, VARf.ts)[2]
   }
 }
 for (i in 1:nc) {
@@ -219,17 +236,22 @@ for (i in 1:nc) {
   if(i<x){
     PE.VAR=VARf.ts-test_h12
     PE.RW=RWf_h12.ts-test_h12
-    m[i,13]=mean((PE.VAR)^2)/mean((PE.RW)^2)
-    m[i,14]=dm.test(PE.VAR, PE.RW, alternative = "two.sided", h=12, power=2)$p.value
-    m[i,15]=hit.ratio(y=test_h12,y.hat=VARf.ts,d=FALSE) 
+    m[i,17]=mean((PE.VAR)^2)/mean((PE.RW)^2)
+    m[i,18]=dm.test(PE.VAR, PE.RW, alternative = "two.sided", h=12, power=pw)$p.value
+    #m[i,19]=hit.ratio(y=test_h12,y.hat=VARf.ts,d=FALSE)
+    m[i,19]=MDirAcc(test_h12, VARf.ts)
+    m[i,20]=eriksPT_test(test_h12, VARf.ts)[pt]
   } else{
     PE.dVAR=VARf.ts-test_dh12
     PE.dRW=test_dh12
-    m[i,13]=mean((PE.dVAR^2))/ mean((PE.dRW)^2)
-    m[i,14]=dm.test(PE.dVAR, PE.dRW, alternative = "two.sided", h=12, power=2)$p.value
-    m[i,15]=hit.ratio(y=test_dh12,y.hat=VARf.ts,d=FALSE)
+    m[i,17]=mean((PE.dVAR^2))/ mean((PE.dRW)^2)
+    m[i,18]=dm.test(PE.dVAR, PE.dRW, alternative = "two.sided", h=12, power=pw)$p.value
+    #m[i,19]=hit.ratio(y=test_dh12,y.hat=VARf.ts,d=FALSE)
+    m[i,19]=MDirAcc(test_dh12, VARf.ts)
+    m[i,20]=eriksPT_test(test_dh12, VARf.ts)[pt]
   }
 }
+
 
 colnames(m) = c("h=1","p","SR","h=3","p","SR","h=6","p","SR","h=9","p","SR","h=12","p","SR")
 p = c(1,12,24,1,12,24,1,12,24,1,12,24,1,12,24,1,12,24,1,12,24,12,24)
@@ -249,21 +271,91 @@ grid.table(m.df)
 m.df
 
 
-VARf.ts = ts(m_h1[1:181,2], frequency=12, start=c(2003, 6), end=c(2018, 6))
-PE.VAR=VARf.ts-test_h1
-PE.RW=RWf_h1.ts-test_h1
-mean((VARf.ts-test_h1)^2)/mean((RWf_h1.ts-test_h1)^2)
-acc=accuracy(VARf.ts,test_h1)
+# directional testing -----------------------------------------------------
 
-autoplot(PE.VAR) +
-  autolayer(PE.RW)
 
+forecast = ts(m_h1[1:181,2], frequency=12, start=c(2003, 6), end=c(2018, 6))
+forecast = ts(m_h1[1:181,1], frequency=12, start=c(2003, 6), end=c(2018, 6))
+actual = subset(VAR.ts[, "lRO"],start=365,end = 545)
+
+
+eriksPT_test=function(Actual, Forecast){
+  
+  obsx=as.numeric(Actual)
+  fcst=as.numeric(Forecast)
+  
+  delta_obsx=as.matrix(cbind(ifelse(obsx-Lag(obsx)>0,1,0)[-1])) #calc change of actual (delta)
+  delta_fcst=as.matrix(cbind(ifelse(fcst-Lag(fcst)>0,1,0)[-1])) #calc change of forecast (delta)
+  TrFa=ifelse(delta_yt-delta_xt==0, 1, 0)
+  
+  n=nrow(delta_obsx)
+  Pyz=mean(TrFa)
+  Py=mean(delta_obsx)
+  Pz=mean(delta_fcst)
+  p=Py%*%Pz+(1-Py)%*%(1-Pz)
+  v=(p%*%(1-p))/n
+  w=(((2%*%Pz-1)^2%*%Py%*%(1-Py))/n)+(((2%*%Py-1)^2%*%Pz%*%(1-Pz))/n)+((4%*%Py%*%Pz%*%(1-Py)%*%(1-Pz))/n^2)
+  
+  Sn=((p%*%(1-p))/n)^(-1/2)*(Pyz-p)
+  Sn2=(Pyz-p)/sqrt(((Pyz%*%(1-Pyz))/n)-w)
+  PT=(Pyz-p)/sqrt(v-w)
+  pv=1-dnorm(PT)
+  summary=c(PT,pv)
+  names(summary)=c("PT statistic","p.value")
+  print(summary)
+  print(Sn)
+  print(Sn2)
+}
+
+nwPT_test=function(Actual,Forecast){
+  
+  yt=Actual #assign actual to yt to make code shorter  
+  xt=Forecast #assign forecast to xt...  
+  
+  delta_yt=as.matrix(cbind(ifelse(yt-Lag(yt)>0,1,0)[-1])) #calc change of yt (delta)
+  delta_xt=as.matrix(cbind(ifelse(xt-Lag(xt)>0,1,0)[-1])) #calc change of xt(delta)
+  nT=length(delta_yt) #number of Time periods
+  Yt=cbind(delta_yt[-1]) #Yt=(y2,...,yT) 
+  Xt=cbind(delta_xt[-1]) #Xt=(x2,...,xT)
+  Yt2=as.vector(rbind(delta_yt[-nT])) #Yt2=(y1,...,yT-1)
+  Xt2=as.vector(rbind(delta_xt[-nT])) #Xt2=(x1,...,xT-1)
+  teta=rep(1,nT-1) #T-1 vector of ones
+  I=diag(nT-1) #Identity matrix
+  W=cbind(teta,Yt2,Xt2) #W matrix as in formula
+  
+  Mw=I-(W%*%((t(W)%*%W)^(-1))%*%t(W))#calcualting Mw as in formula
+  
+  #calculating elements S as in formula
+  Syy.w=((nT-1)^(-1))*t(Yt)%*%Mw%*%Yt
+  Sxx.w=((nT-1)^(-1))*t(Xt)%*%Mw%*%Xt
+  Sxy.w=((nT-1)^(-1))*t(Xt)%*%Mw%*%Yt
+  Syx.w=((nT-1)^(-1))*t(Yt)%*%Mw%*%Xt
+  
+  PT=(nT-1)*(Syy.w^(-1)*Syx.w*Sxx.w^(-1)*Sxy.w)#finally calculating PT 
+  
+  p.value=1-pchisq(PT,df=1)#calculating p-value
+  #some code to make it looks nicer
+  summary=c(PT,p.value)
+  names(summary)=c("PT statistic","p.value")
+  summary
+}
+
+MDirAcc <- function(Actual, Forecast, lag=1) {
+  return( mean(sign(diff(Actual, lag=lag))==sign(diff(Forecast, lag=lag))) )
+}
+
+DACTest(delta_fcst, delta_obsx, test = "PT", conf.level = 0.90) #ser forkert ud
+DACTest(fcst, obsx, test = "PT", conf.level = 0.95) #fejlmeldelse
+
+#Succes Ratio:
+MDirAcc(actual, forecast)
+hit.ratio(y=actual, y.hat=forecast, d=FALSE)
+
+#Significance (Pesaran x Timmermann):
+nwPT_test(actual, forecast)
+eriksPT_test(actual, forecast)
 
 dm.test(PE.VAR, PE.RW, alternative = "two.sided", h=1, power=2)
-
-
-
-
 dm.test(PE.VAR, PE.RW, alternative = "less", h=9, power=2)$p.value
 
 
