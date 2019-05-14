@@ -7,6 +7,40 @@ library(urca)
 library(forecast)
 library(ggthemes)
 library(fDMA)
+library(quantmod)
+library(grid)
+library(gridExtra)
+
+eriksPT_test=function(Actual, Forecast){
+  
+  obsx=as.numeric(Actual)
+  fcst=as.numeric(Forecast)
+  
+  delta_obsx=as.matrix(cbind(ifelse(obsx-Lag(obsx)>0,1,0)[-1])) #calc change of actual (delta)
+  delta_fcst=as.matrix(cbind(ifelse(fcst-Lag(fcst)>0,1,0)[-1])) #calc change of forecast (delta)
+  TrFa=ifelse(delta_obsx-delta_fcst==0, 1, 0)
+  
+  n=nrow(delta_obsx)
+  Pyz=mean(TrFa)
+  Py=mean(delta_obsx)
+  Pz=mean(delta_fcst)
+  p=Py%*%Pz+(1-Py)%*%(1-Pz)
+  v=(p%*%(1-p))/n
+  w=(((2%*%Pz-1)^2%*%Py%*%(1-Py))/n)+(((2%*%Py-1)^2%*%Pz%*%(1-Pz))/n)+((4%*%Py%*%Pz%*%(1-Py)%*%(1-Pz))/n^2)
+  
+  Sn=((p%*%(1-p))/n)^(-1/2)*(Pyz-p) #sidste ligning s.461 i Timmermann
+  Sn2=(Pyz-p)/sqrt(((Pyz%*%(1-Pyz))/n)-w) #ligning 6 i Timmermann
+  PT=(Pyz-p)/sqrt(v-w) #http://www.real-statistics.com/time-series-analysis/forecasting-accuracy/pesaran-timmermann-test/
+  pv=1-pnorm(PT)
+  summary=c(PT,pv)
+  names(summary)=c("PT statistic","p.value")
+  summary
+  #print(Sn)
+  #print(Sn2)
+}
+MDirAcc <- function(Actual, Forecast, lag=1) {
+  return( mean(sign(diff(Actual, lag=lag))==sign(diff(Forecast, lag=lag))) )
+}
 
 
 # Variable <- read_excel("~/8.semester projekt/Variable.xlsx")
@@ -26,7 +60,37 @@ data.xts <- data.xts["1973-01/2018-06"]
 lRO = data.xts$lRO["1973-02/2018-06"]
 lRO.ts <- ts(lRO,frequency=12,start=c(1973, 2), end=c(2018, 6))
 
-# h=1 forecasts -----------------------------------------------------------
+nc=8
+m_h1=matrix(nrow=182, ncol=nc)
+m_h3=matrix(nrow=182, ncol=nc)
+m_h6=matrix(nrow=182, ncol=nc)
+m_h9=matrix(nrow=182, ncol=nc)
+m_h12=matrix(nrow=182, ncol=nc)
+
+for (j in 1:nc){
+  for (i in 0:181) {
+    train = lRO.ts[1:(364+i), ]
+    
+    if (j==1){arimaf = Arima(train, order=c(1,0,0))}
+    if (j==2){arimaf = Arima(train, order=c(12,0,0))}
+    #if (j==3){arimaf = Arima(train, order=c(24,0,0))}
+    # den stopper ved række 77 ved 24 lags
+    if (j==4){arimaf = Arima(train, order=c(1,0,1))}
+    if (j==5){arimaf = Arima(train, order=c(1,1,0))}
+    if (j==6){arimaf = Arima(train, order=c(11,1,0))}
+    #if (j==7){arimaf = Arima(train, order=c(23,1,0))}
+    if (j==8){arimaf = Arima(train, order=c(0,1,1))}
+   
+    m_h1[i+1,j]=predict(arimaf, n.ahead=1)$pred[1]
+    m_h3[i+1,j]=predict(arimaf, n.ahead=3)$pred[3]
+    m_h6[i+1,j]=predict(arimaf, n.ahead=6)$pred[6]
+    m_h9[i+1,j]=predict(arimaf, n.ahead=9)$pred[9]
+    m_h12[i+1,j]=predict(arimaf, n.ahead=12)$pred[12]
+  }
+}
+
+
+# gamle loops -----------------------------------------------------------
 m_h1=matrix(nrow=182, ncol=10)
 
 # AR(12) 
@@ -40,7 +104,7 @@ for (i in 0:181) {
 for (i in 0:181) {
   train = lRO.ts[1:(364+i), ]
   arimaf = Arima(train, order=c(24,0,0))
-  m_h1[i+1,2]=predict(arimaf, n.ahead=1)$pred[1] #recursive forecast
+  m_h1[i+1,5]=predict(arimaf, n.ahead=1)$pred[1] #recursive forecast
 }
 
 # AR() (SIC)
@@ -100,7 +164,6 @@ for (i in 0:181) {
 }
 
 
-# h=3 forecasts -----------------------------------------------------------
 m_h3=matrix(nrow=182, ncol=10)
 
 #AR(12)
@@ -173,31 +236,155 @@ for (i in 0:181) {
   m_h3[i+1,10]=predict(arimaf, n.ahead=3)$pred[3]
 }
 
+m2=matrix(nrow=8, ncol=4)
+
+for (i in 1:8) {
+  arimaf.ts = ts(m_h1[1:181,i], frequency=12, start=c(2003, 6), end=c(2018, 6))
+  m2[i,1]=mean((arimaf.ts-test_h1)^2)/mean((RWf_h1.ts-test_h1)^2)
+  m2[i,2]=hit.ratio(y=test_h1,y.hat=arimaf.ts,d=FALSE)
+}
+
+for (i in 1:8) {
+  arimaf.ts = ts(m_h3[1:179,i], frequency=12, start=c(2003, 8), end=c(2018, 6))
+  m2[i,3]=mean((arimaf.ts-test_h3)^2)/mean((RWf_h3.ts-test_h3)^2)
+  m2[i,4]=hit.ratio(y=test_h3,y.hat=arimaf.ts,d=FALSE)
+}
+
 
 # Forecast Accuracy -----------------------------------------------------------------------
 test_h1 = subset(lRO.ts[, "lRO"],start=365,end = 545)
 test_h3 = subset(lRO.ts[, "lRO"],start=367,end = 545)
+test_h6 = subset(lRO.ts[, "lRO"],start=369,end = 545)
+test_h9 = subset(lRO.ts[, "lRO"],start=371,end = 545)
+test_h12 = subset(lRO.ts[, "lRO"],start=373,end = 545)
+
 RW = lRO.ts[-c(1:363), "lRO"]
 RWf_h1.ts = ts(RW[1:181], frequency=12, start=c(2003, 6), end=c(2018, 6))
 RWf_h3.ts = ts(RW[1:179], frequency=12, start=c(2003, 8), end=c(2018, 6))
+RWf_h6.ts = ts(RW[1:177], frequency=12, start=c(2003, 10), end=c(2018, 6))
+RWf_h9.ts = ts(RW[1:175], frequency=12, start=c(2003, 12), end=c(2018, 6))
+RWf_h12.ts = ts(RW[1:173], frequency=12, start=c(2004, 2), end=c(2018, 6))
 
-m=matrix(nrow=10, ncol=10)
 
-for (i in 1:10) {
+m=matrix(nrow=nc, ncol=20)
+pw=1
+pt=2
+x=9
+
+for (i in 1:nc) {
   arimaf.ts = ts(m_h1[1:181,i], frequency=12, start=c(2003, 6), end=c(2018, 6))
-  m[i,1]=mean((arimaf.ts-test_h1)^2)/mean((RWf_h1.ts-test_h1)^2)
-  m[i,2]=hit.ratio(y=test_h1,y.hat=arimaf.ts,d=FALSE)
+  if(i<x){
+    PE.ARIMA=arimaf.ts-test_h1
+    PE.RW=RWf_h1.ts-test_h1
+    m[i,1]=mean((PE.ARIMA)^2)/mean((PE.RW)^2)
+    m[i,2]=dm.test(PE.ARIMA, PE.RW, alternative = "two.sided", h=1, power=pw)$p.value
+    m[i,3]=MDirAcc(test_h1, arimaf.ts)
+    m[i,4]=eriksPT_test(test_h1, arimaf.ts)[pt]
+  } else{
+    PE.dVAR=arimaf.ts-test_dh1
+    PE.dRW=test_dh1
+    m[i,1]=mean((PE.dVAR)^2)/mean((PE.dRW)^2)
+    m[i,2]=dm.test(PE.dVAR, PE.dRW, alternative = "two.sided", h=1, power=pw)$p.value
+    m[i,3]=MDirAcc(test_dh1, arimaf.ts)
+    m[i,4]=eriksPT_test(test_dh1, arimaf.ts)[pt]
+  }
+}
+for (i in 1:nc) {
+  arimaf.ts = ts(m_h3[1:179,i], frequency=12, start=c(2003, 8), end=c(2018, 6))
+  if(i<x){
+    PE.ARIMA=arimaf.ts-test_h3
+    PE.RW=RWf_h3.ts-test_h3
+    m[i,5]=mean((PE.ARIMA)^2)/mean((PE.RW)^2)
+    m[i,6]=dm.test(PE.ARIMA, PE.RW, alternative = "two.sided", h=3, power=pw)$p.value
+    #m[i,7]=hit.ratio(y=test_h3,y.hat=arimaf.ts,d=FALSE)
+    m[i,7]=MDirAcc(test_h3, arimaf.ts)
+    m[i,8]=eriksPT_test(test_h3, arimaf.ts)[pt]
+  } else{
+    PE.dVAR=arimaf.ts-test_dh3
+    PE.dRW=test_dh3
+    m[i,5]=mean((PE.dVAR)^2)/mean((PE.dRW)^2)
+    m[i,6]=dm.test(PE.dVAR, PE.dRW, alternative = "two.sided", h=3, power=pw)$p.value
+    #m[i,7]=hit.ratio(y=test_dh3,y.hat=arimaf.ts,d=FALSE)
+    m[i,7]=MDirAcc(test_dh3, arimaf.ts)
+    m[i,8]=eriksPT_test(test_dh3, arimaf.ts)[pt]
+  }
+}
+for (i in 1:nc) {
+  arimaf.ts = ts(m_h6[1:177,i], frequency=12, start=c(2003, 10), end=c(2018, 6))
+  if(i<x){
+    PE.ARIMA=arimaf.ts-test_h6
+    PE.RW=RWf_h6.ts-test_h6
+    m[i,9]=mean((PE.ARIMA)^2)/mean((PE.RW)^2)
+    m[i,10]=dm.test(PE.ARIMA, PE.RW, alternative = "two.sided", h=6, power=pw)$p.value
+    #m[i,11]=hit.ratio(y=test_h6,y.hat=arimaf.ts,d=FALSE)
+    m[i,11]=MDirAcc(test_h6, arimaf.ts)
+    m[i,12]=eriksPT_test(test_h6, arimaf.ts)[pt]
+  } else{
+    PE.dVAR=arimaf.ts-test_dh6
+    PE.dRW=test_dh6
+    m[i,9]=mean((PE.dVAR^2))/ mean((PE.dRW)^2)
+    m[i,10]=dm.test(PE.dVAR, PE.dRW, alternative = "two.sided", h=6, power=pw)$p.value
+    m[i,11]=MDirAcc(test_dh6, arimaf.ts)
+    m[i,12]=eriksPT_test(test_dh6, arimaf.ts)[pt]
+  }
+}
+for (i in 1:nc) {
+  arimaf.ts = ts(m_h9[1:175,i], frequency=12, start=c(2003, 12), end=c(2018, 6))
+  if(i<x){
+    PE.ARIMA=arimaf.ts-test_h9
+    PE.RW=RWf_h9.ts-test_h9
+    m[i,13]=mean((PE.ARIMA)^2)/mean((PE.RW)^2)
+    m[i,14]=dm.test(PE.ARIMA, PE.RW, alternative = "two.sided", h=9, power=pw)$p.value
+    m[i,15]=MDirAcc(test_h9, arimaf.ts)
+    m[i,16]=eriksPT_test(test_h9, arimaf.ts)[pt]
+  } else{
+    PE.dVAR=arimaf.ts-test_dh9
+    PE.dRW=test_dh9
+    m[i,13]=mean((PE.dVAR^2))/ mean((PE.dRW)^2)
+    m[i,14]=dm.test(PE.dVAR, PE.dRW, alternative = "two.sided", h=9, power=pw)$p.value
+    m[i,15]=MDirAcc(test_dh9, arimaf.ts)
+    m[i,16]=eriksPT_test(test_dh9, arimaf.ts)[2]
+  }
+}
+for (i in 1:nc) {
+  arimaf.ts = ts(m_h12[1:173,i], frequency=12, start=c(2004, 2), end=c(2018, 6))
+  if(i<x){
+    PE.ARIMA=arimaf.ts-test_h12
+    PE.RW=RWf_h12.ts-test_h12
+    m[i,17]=mean((PE.ARIMA)^2)/mean((PE.RW)^2)
+    m[i,18]=dm.test(PE.ARIMA, PE.RW, alternative = "two.sided", h=12, power=pw)$p.value
+    m[i,19]=MDirAcc(test_h12, arimaf.ts)
+    m[i,20]=eriksPT_test(test_h12, arimaf.ts)[pt]
+  } else{
+    PE.dVAR=arimaf.ts-test_dh12
+    PE.dRW=test_dh12
+    m[i,17]=mean((PE.dVAR^2))/ mean((PE.dRW)^2)
+    m[i,18]=dm.test(PE.dVAR, PE.dRW, alternative = "two.sided", h=12, power=pw)$p.value
+    m[i,19]=MDirAcc(test_dh12, arimaf.ts)
+    m[i,20]=eriksPT_test(test_dh12, arimaf.ts)[pt]
+  }
 }
 
-for (i in 1:10) {
-  arimaf.ts = ts(m_h3[1:179,i], frequency=12, start=c(2003, 8), end=c(2018, 6))
-  m[i,3]=mean((arimaf.ts-test_h3)^2)/mean((RWf_h3.ts-test_h3)^2)
-  m[i,4]=hit.ratio(y=test_h3,y.hat=arimaf.ts,d=FALSE)
-}
+
+
+
+colnames(m) = c("h=1","pv","SR","pv","h=3","pv","SR","pv","h=6","pv","SR","pv","h=9","pv","SR","pv","h=12","pv","SR","pv")
+#p = c(1,12,24,1,12,24,1,12,24,1,12,24,1,12,24,1,12,24,1,12,24,12,24)
+#m = cbind(p, m)
+
+m.df = as.data.frame(m, row.names = c("AR(1)", "AR(12)", "AR(24)", "ARMA(1,1)", 
+                                      "ARIMA(1,1,0)", "ARIMA(11,1,0)", "ARIMA(23,1,0)", 
+                                      "ARIMA(0,1,1)"))
+m.df =round(m.df, digits = 3)
+grid.table(m.df)
+
+
+
+
+
+
 
 m #fraction of random walk - should be <1 to beat the RW
-
-
 
 
 arimaf.ts = ts(m_h1[1:213,1], frequency=12, start=c(1991, 12), end=c(2009, 8))
@@ -210,9 +397,6 @@ autoplot(test_h1, series = "Real Price") +
   guides(colour=guide_legend(title="Series:")) +
   theme_economist() +
   scale_color_economist()
-
-
-
 
 
 
