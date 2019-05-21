@@ -34,8 +34,8 @@ eriksPT_test=function(Actual, Forecast){
   v=(p%*%(1-p))/n
   w=(((2%*%Pz-1)^2%*%Py%*%(1-Py))/n)+(((2%*%Py-1)^2%*%Pz%*%(1-Pz))/n)+((4%*%Py%*%Pz%*%(1-Py)%*%(1-Pz))/n^2)
   
-  Sn=((p%*%(1-p))/n)^(-1/2)*(Pyz-p) #sidste ligning s.461 i Timmermann
-  Sn2=(Pyz-p)/sqrt(((Pyz%*%(1-Pyz))/n)-w) #ligning 6 i Timmermann
+  #Sn=((p%*%(1-p))/n)^(-1/2)*(Pyz-p) #sidste ligning s.461 i Timmermann
+  #Sn2=(Pyz-p)/sqrt(((Pyz%*%(1-Pyz))/n)-w) #ligning 6 i Timmermann
   PT=(Pyz-p)/sqrt(v-w) #http://www.real-statistics.com/time-series-analysis/forecasting-accuracy/pesaran-timmermann-test/
   pv=1-pnorm(PT)
   summary=c(PT,pv)
@@ -80,17 +80,11 @@ x=19
   m_h12=matrix(nrow=182, ncol=nc)
 
 VAR.ts <- ts(data.xts[-1,c("Kilian","dOI","lRO","OP")],frequency=12,start=c(1973, 2), end=c(2018, 6))
-
 VAR2.ts <- ts(data.xts[-1,c("Kilian","lRO","OP")],frequency=12,start=c(1973, 2), end=c(2018, 6)) 
-
 VAR3.ts <- ts(data.xts[-1,c("Kilian","lRO")],frequency=12,start=c(1973, 2), end=c(2018, 6)) 
-
 VAR4.ts <- ts(data.xts[-1,c("dOI","lRO")],frequency=12,start=c(1973, 2), end=c(2018, 6))
-
 VAR5.ts <- ts(data.xts[-1,c("lRO","OP")],frequency=12,start=c(1973, 2), end=c(2018, 6))
-
 VAR6.ts <- ts(data.xts[-1,c("Kilian", "dOI", "lRO")],frequency=12,start=c(1973, 2), end=c(2018, 6)) 
-
 dVAR.ts <- ts(data.xts[-1,c("Kilian","dOI","l_diff_RO","OP")] ,frequency=12,start=c(1973, 2), end=c(2018, 6))
 }
 for (j in 1:nc){
@@ -153,17 +147,11 @@ for (j in 1:nc){
   mH_h12=matrix(nrow=182, ncol=nc)
   
   VAR.ts <- ts(data.xts[-1,c("Hamilton","dOI","lRO","OP")],frequency=12,start=c(1973, 2), end=c(2018, 6))
-  
   VAR2.ts <- ts(data.xts[-1,c("Hamilton","lRO","OP")],frequency=12,start=c(1973, 2), end=c(2018, 6))
-  
   VAR3.ts <- ts(data.xts[-1,c("Hamilton","lRO")],frequency=12,start=c(1973, 2), end=c(2018, 6))
-  
   VAR4.ts <- ts(data.xts[-1,c("dOI","lRO")],frequency=12,start=c(1973, 2), end=c(2018, 6))
-  
   VAR5.ts <- ts(data.xts[-1,c("lRO","OP")],frequency=12,start=c(1973, 2), end=c(2018, 6))
-  
   VAR6.ts <- ts(data.xts[-1,c("Hamilton","dOI","lRO")],frequency=12,start=c(1973, 2), end=c(2018, 6))
-  
   dVAR.ts <- ts(data.xts[-1,c("Hamilton","dOI","l_diff_RO","OP")] ,frequency=12,start=c(1973, 2), end=c(2018, 6))
 }
 for (j in 1:nc){
@@ -311,7 +299,7 @@ RWf_h12.ts = ts(RW[1:170], frequency=12, start=c(2004, 5), end=c(2018, 6))
 }
 
 m=matrix(nrow=nc, ncol=20)
-pw=1
+pw=2
 pt=2
   
 for (i in 1:nc) {
@@ -320,14 +308,14 @@ for (i in 1:nc) {
     PE.VAR=VARf.ts-test_h1
     PE.RW=RWf_h1.ts-test_h1
     m[i,1]=mean((PE.VAR)^2)/mean((PE.RW)^2)
-    m[i,2]=dm.test(PE.VAR, PE.RW, alternative = "two.sided", h=1, power=pw)$p.value
+    m[i,2]=dm.test(PE.VAR, PE.RW, alternative = "less", h=1, power=pw)$p.value
     m[i,3]=MDirAcc(test_h1, VARf.ts)
     m[i,4]=eriksPT_test(test_h1, VARf.ts)[pt]
   } else{
     PE.dVAR=VARf.ts-test_dh1
     PE.dRW=test_dh1
     m[i,1]=mean((PE.dVAR)^2)/mean((PE.dRW)^2)
-    m[i,2]=dm.test(PE.dVAR, PE.dRW, alternative = "two.sided", h=1, power=pw)$p.value
+    m[i,2]=dm.test(PE.dVAR, PE.dRW, alternative = "less", h=1, power=pw)$p.value
     m[i,3]=MDirAcc(test_dh1, VARf.ts)
     m[i,4]=eriksPT_test(test_dh1, VARf.ts)[pt]
   }
@@ -338,16 +326,14 @@ for (i in 1:nc) {
     PE.VAR=VARf.ts-test_h3
     PE.RW=RWf_h3.ts-test_h3
     m[i,5]=mean((PE.VAR)^2)/mean((PE.RW)^2)
-    m[i,6]=dm.test(PE.VAR, PE.RW, alternative = "two.sided", h=3, power=pw)$p.value
-    #m[i,7]=hit.ratio(y=test_h3,y.hat=VARf.ts,d=FALSE)
+    m[i,6]=dm.test(PE.VAR, PE.RW, alternative = "less", h=3, power=pw)$p.value
     m[i,7]=MDirAcc(test_h3, VARf.ts)
     m[i,8]=eriksPT_test(test_h3, VARf.ts)[pt]
   } else{
     PE.dVAR=VARf.ts-test_dh3
     PE.dRW=test_dh3
     m[i,5]=mean((PE.dVAR)^2)/mean((PE.dRW)^2)
-    m[i,6]=dm.test(PE.dVAR, PE.dRW, alternative = "two.sided", h=3, power=pw)$p.value
-    #m[i,7]=hit.ratio(y=test_dh3,y.hat=VARf.ts,d=FALSE)
+    m[i,6]=dm.test(PE.dVAR, PE.dRW, alternative = "less", h=3, power=pw)$p.value
     m[i,7]=MDirAcc(test_dh3, VARf.ts)
     m[i,8]=eriksPT_test(test_dh3, VARf.ts)[pt]
   }
@@ -358,16 +344,14 @@ for (i in 1:nc) {
     PE.VAR=VARf.ts-test_h6
     PE.RW=RWf_h6.ts-test_h6
     m[i,9]=mean((PE.VAR)^2)/mean((PE.RW)^2)
-    m[i,10]=dm.test(PE.VAR, PE.RW, alternative = "two.sided", h=6, power=pw)$p.value
-    #m[i,11]=hit.ratio(y=test_h6,y.hat=VARf.ts,d=FALSE)
+    m[i,10]=dm.test(PE.VAR, PE.RW, alternative = "less", h=6, power=pw)$p.value
     m[i,11]=MDirAcc(test_h6, VARf.ts)
     m[i,12]=eriksPT_test(test_h6, VARf.ts)[pt]
   } else{
     PE.dVAR=VARf.ts-test_dh6
     PE.dRW=test_dh6
     m[i,9]=mean((PE.dVAR^2))/ mean((PE.dRW)^2)
-    m[i,10]=dm.test(PE.dVAR, PE.dRW, alternative = "two.sided", h=6, power=pw)$p.value
-    #m[i,11]=hit.ratio(y=test_dh6,y.hat=VARf.ts,d=FALSE)
+    m[i,10]=dm.test(PE.dVAR, PE.dRW, alternative = "less", h=6, power=pw)$p.value
     m[i,11]=MDirAcc(test_dh6, VARf.ts)
     m[i,12]=eriksPT_test(test_dh6, VARf.ts)[pt]
   }
@@ -378,16 +362,14 @@ for (i in 1:nc) {
     PE.VAR=VARf.ts-test_h9
     PE.RW=RWf_h9.ts-test_h9
     m[i,13]=mean((PE.VAR)^2)/mean((PE.RW)^2)
-    m[i,14]=dm.test(PE.VAR, PE.RW, alternative = "two.sided", h=9, power=pw)$p.value
-    #m[i,15]=hit.ratio(y=test_h9,y.hat=VARf.ts,d=FALSE)
+    m[i,14]=dm.test(PE.VAR, PE.RW, alternative = "less", h=9, power=pw)$p.value
     m[i,15]=MDirAcc(test_h9, VARf.ts)
     m[i,16]=eriksPT_test(test_h9, VARf.ts)[pt]
   } else{
     PE.dVAR=VARf.ts-test_dh9
     PE.dRW=test_dh9
     m[i,13]=mean((PE.dVAR^2))/ mean((PE.dRW)^2)
-    m[i,14]=dm.test(PE.dVAR, PE.dRW, alternative = "two.sided", h=9, power=pw)$p.value
-    #m[i,15]=hit.ratio(y=test_dh9,y.hat=VARf.ts,d=FALSE)
+    m[i,14]=dm.test(PE.dVAR, PE.dRW, alternative = "less", h=9, power=pw)$p.value
     m[i,15]=MDirAcc(test_dh9, VARf.ts)
     m[i,16]=eriksPT_test(test_dh9, VARf.ts)[2]
   }
@@ -398,16 +380,14 @@ for (i in 1:nc) {
     PE.VAR=VARf.ts-test_h12
     PE.RW=RWf_h12.ts-test_h12
     m[i,17]=mean((PE.VAR)^2)/mean((PE.RW)^2)
-    m[i,18]=dm.test(PE.VAR, PE.RW, alternative = "two.sided", h=12, power=pw)$p.value
-    #m[i,19]=hit.ratio(y=test_h12,y.hat=VARf.ts,d=FALSE)
+    m[i,18]=dm.test(PE.VAR, PE.RW, alternative = "less", h=12, power=pw)$p.value
     m[i,19]=MDirAcc(test_h12, VARf.ts)
     m[i,20]=eriksPT_test(test_h12, VARf.ts)[pt]
   } else{
     PE.dVAR=VARf.ts-test_dh12
     PE.dRW=test_dh12
     m[i,17]=mean((PE.dVAR^2))/ mean((PE.dRW)^2)
-    m[i,18]=dm.test(PE.dVAR, PE.dRW, alternative = "two.sided", h=12, power=pw)$p.value
-    #m[i,19]=hit.ratio(y=test_dh12,y.hat=VARf.ts,d=FALSE)
+    m[i,18]=dm.test(PE.dVAR, PE.dRW, alternative = "less", h=12, power=pw)$p.value
     m[i,19]=MDirAcc(test_dh12, VARf.ts)
     m[i,20]=eriksPT_test(test_dh12, VARf.ts)[pt]
   }
@@ -427,13 +407,13 @@ m.df = as.data.frame(m, row.names = c("Killian1","Killian2","Killian3",
                                         "Diff1", "Diff2"), 
                      colnames(1,2,3,4,5,6,7,8,9,10))
 m.df =round(m.df, digits = 3)
-grid.table(m.df)
+#grid.table(m.df)
 m.df
 
 #HAMILTON
 
 m2=matrix(nrow=nc, ncol=20)
-pw=1
+pw=2
 pt=2
 
 for (i in 1:nc) {
@@ -442,14 +422,14 @@ for (i in 1:nc) {
     PE.VAR=VARf.ts-test_h1
     PE.RW=RWf_h1.ts-test_h1
     m2[i,1]=mean((PE.VAR)^2)/mean((PE.RW)^2)
-    m2[i,2]=dm.test(PE.VAR, PE.RW, alternative = "two.sided", h=1, power=pw)$p.value
+    m2[i,2]=dm.test(PE.VAR, PE.RW, alternative = "less", h=1, power=pw)$p.value
     m2[i,3]=MDirAcc(test_h1, VARf.ts)
     m2[i,4]=eriksPT_test(test_h1, VARf.ts)[pt]
   } else{
     PE.dVAR=VARf.ts-test_dh1
     PE.dRW=test_dh1
     m2[i,1]=mean((PE.dVAR)^2)/mean((PE.dRW)^2)
-    m2[i,2]=dm.test(PE.dVAR, PE.dRW, alternative = "two.sided", h=1, power=pw)$p.value
+    m2[i,2]=dm.test(PE.dVAR, PE.dRW, alternative = "less", h=1, power=pw)$p.value
     m2[i,3]=MDirAcc(test_dh1, VARf.ts)
     m2[i,4]=eriksPT_test(test_dh1, VARf.ts)[pt]
   }
@@ -460,68 +440,68 @@ for (i in 1:nc) {
     PE.VAR=VARf.ts-test_h3
     PE.RW=RWf_h3.ts-test_h3
     m2[i,5]=mean((PE.VAR)^2)/mean((PE.RW)^2)
-    m2[i,6]=dm.test(PE.VAR, PE.RW, alternative = "two.sided", h=3, power=pw)$p.value
+    m2[i,6]=dm.test(PE.VAR, PE.RW, alternative = "less", h=3, power=pw)$p.value
     m2[i,7]=MDirAcc(test_h3, VARf.ts)
     m2[i,8]=eriksPT_test(test_h3, VARf.ts)[pt]
   } else{
     PE.dVAR=VARf.ts-test_dh3
     PE.dRW=test_dh3
     m2[i,5]=mean((PE.dVAR)^2)/mean((PE.dRW)^2)
-    m2[i,6]=dm.test(PE.dVAR, PE.dRW, alternative = "two.sided", h=3, power=pw)$p.value
+    m2[i,6]=dm.test(PE.dVAR, PE.dRW, alternative = "less", h=3, power=pw)$p.value
     m2[i,7]=MDirAcc(test_dh3, VARf.ts)
     m2[i,8]=eriksPT_test(test_dh3, VARf.ts)[pt]
   }
 }
 for (i in 1:nc) {
-  VARf.ts = ts(mH_h6[1:177,i], frequency=12, start=c(2003, 10), end=c(2018, 6))
+  VARf.ts = ts(mH_h6[1:176,i], frequency=12, start=c(2003, 11), end=c(2018, 6))
   if(i<x){
     PE.VAR=VARf.ts-test_h6
     PE.RW=RWf_h6.ts-test_h6
     m2[i,9]=mean((PE.VAR)^2)/mean((PE.RW)^2)
-    m2[i,10]=dm.test(PE.VAR, PE.RW, alternative = "two.sided", h=6, power=pw)$p.value
+    m2[i,10]=dm.test(PE.VAR, PE.RW, alternative = "less", h=6, power=pw)$p.value
     m2[i,11]=MDirAcc(test_h6, VARf.ts)
     m2[i,12]=eriksPT_test(test_h6, VARf.ts)[pt]
   } else{
     PE.dVAR=VARf.ts-test_dh6
     PE.dRW=test_dh6
     m2[i,9]=mean((PE.dVAR^2))/ mean((PE.dRW)^2)
-    m2[i,10]=dm.test(PE.dVAR, PE.dRW, alternative = "two.sided", h=6, power=pw)$p.value
+    m2[i,10]=dm.test(PE.dVAR, PE.dRW, alternative = "less", h=6, power=pw)$p.value
     m2[i,11]=MDirAcc(test_dh6, VARf.ts)
     m2[i,12]=eriksPT_test(test_dh6, VARf.ts)[pt]
   }
 }
 for (i in 1:nc) {
-  VARf.ts = ts(mH_h9[1:175,i], frequency=12, start=c(2003, 12), end=c(2018, 6))
+  VARf.ts = ts(mH_h9[1:173,i], frequency=12, start=c(2004, 2), end=c(2018, 6))
   if(i<x){
     PE.VAR=VARf.ts-test_h9
     PE.RW=RWf_h9.ts-test_h9
     m2[i,13]=mean((PE.VAR)^2)/mean((PE.RW)^2)
-    m2[i,14]=dm.test(PE.VAR, PE.RW, alternative = "two.sided", h=9, power=pw)$p.value
+    m2[i,14]=dm.test(PE.VAR, PE.RW, alternative = "less", h=9, power=pw)$p.value
     m2[i,15]=MDirAcc(test_h9, VARf.ts)
     m2[i,16]=eriksPT_test(test_h9, VARf.ts)[pt]
   } else{
     PE.dVAR=VARf.ts-test_dh9
     PE.dRW=test_dh9
     m2[i,13]=mean((PE.dVAR^2))/ mean((PE.dRW)^2)
-    m2[i,14]=dm.test(PE.dVAR, PE.dRW, alternative = "two.sided", h=9, power=pw)$p.value
+    m2[i,14]=dm.test(PE.dVAR, PE.dRW, alternative = "less", h=9, power=pw)$p.value
     m2[i,15]=MDirAcc(test_dh9, VARf.ts)
     m2[i,16]=eriksPT_test(test_dh9, VARf.ts)[2]
   }
 }
 for (i in 1:nc) {
-  VARf.ts = ts(mH_h12[1:173,i], frequency=12, start=c(2004, 2), end=c(2018, 6))
+  VARf.ts = ts(mH_h12[1:170,i], frequency=12, start=c(2004, 5), end=c(2018, 6))
   if(i<x){
     PE.VAR=VARf.ts-test_h12
     PE.RW=RWf_h12.ts-test_h12
     m2[i,17]=mean((PE.VAR)^2)/mean((PE.RW)^2)
-    m2[i,18]=dm.test(PE.VAR, PE.RW, alternative = "two.sided", h=12, power=pw)$p.value
+    m2[i,18]=dm.test(PE.VAR, PE.RW, alternative = "less", h=12, power=pw)$p.value
     m2[i,19]=MDirAcc(test_h12, VARf.ts)
     m2[i,20]=eriksPT_test(test_h12, VARf.ts)[pt]
   } else{
     PE.dVAR=VARf.ts-test_dh12
     PE.dRW=test_dh12
     m2[i,17]=mean((PE.dVAR^2))/ mean((PE.dRW)^2)
-    m2[i,18]=dm.test(PE.dVAR, PE.dRW, alternative = "two.sided", h=12, power=pw)$p.value
+    m2[i,18]=dm.test(PE.dVAR, PE.dRW, alternative = "less", h=12, power=pw)$p.value
     m2[i,19]=MDirAcc(test_dh12, VARf.ts)
     m2[i,20]=eriksPT_test(test_dh12, VARf.ts)[pt]
   }
@@ -541,7 +521,7 @@ m2.df = as.data.frame(m2, row.names = c("Hamilton1","Hamilton2","Hamilton3",
                                       "Diff1", "Diff2"), 
                      colnames(1,2,3,4,5,6,7,8,9,10))
 m2.df =round(m2.df, digits = 3)
-grid.table(m2.df)
+#grid.table(m2.df)
 m2.df
 
 #HAMILTON OECD
@@ -556,14 +536,14 @@ for (i in 1:nc) {
     PE.VAR=VARf.ts-test_h1
     PE.RW=RWf_h1.ts-test_h1
     m3[i,1]=mean((PE.VAR)^2)/mean((PE.RW)^2)
-    m3[i,2]=dm.test(PE.VAR, PE.RW, alternative = "two.sided", h=1, power=pw)$p.value
+    m3[i,2]=dm.test(PE.VAR, PE.RW, alternative = "less", h=1, power=pw)$p.value
     m3[i,3]=MDirAcc(test_h1, VARf.ts)
     m3[i,4]=eriksPT_test(test_h1, VARf.ts)[pt]
   } else{
     PE.dVAR=VARf.ts-test_dh1
     PE.dRW=test_dh1
     m3[i,1]=mean((PE.dVAR)^2)/mean((PE.dRW)^2)
-    m3[i,2]=dm.test(PE.dVAR, PE.dRW, alternative = "two.sided", h=1, power=pw)$p.value
+    m3[i,2]=dm.test(PE.dVAR, PE.dRW, alternative = "less", h=1, power=pw)$p.value
     m3[i,3]=MDirAcc(test_dh1, VARf.ts)
     m3[i,4]=eriksPT_test(test_dh1, VARf.ts)[pt]
   }
@@ -574,68 +554,68 @@ for (i in 1:nc) {
     PE.VAR=VARf.ts-test_h3
     PE.RW=RWf_h3.ts-test_h3
     m3[i,5]=mean((PE.VAR)^2)/mean((PE.RW)^2)
-    m3[i,6]=dm.test(PE.VAR, PE.RW, alternative = "two.sided", h=3, power=pw)$p.value
+    m3[i,6]=dm.test(PE.VAR, PE.RW, alternative = "less", h=3, power=pw)$p.value
     m3[i,7]=MDirAcc(test_h3, VARf.ts)
     m3[i,8]=eriksPT_test(test_h3, VARf.ts)[pt]
   } else{
     PE.dVAR=VARf.ts-test_dh3
     PE.dRW=test_dh3
     m3[i,5]=mean((PE.dVAR)^2)/mean((PE.dRW)^2)
-    m3[i,6]=dm.test(PE.dVAR, PE.dRW, alternative = "two.sided", h=3, power=pw)$p.value
+    m3[i,6]=dm.test(PE.dVAR, PE.dRW, alternative = "less", h=3, power=pw)$p.value
     m3[i,7]=MDirAcc(test_dh3, VARf.ts)
     m3[i,8]=eriksPT_test(test_dh3, VARf.ts)[pt]
   }
 }
 for (i in 1:nc) {
-  VARf.ts = ts(mO_h6[1:177,i], frequency=12, start=c(2003, 10), end=c(2018, 6))
+  VARf.ts = ts(mO_h6[1:176,i], frequency=12, start=c(2003, 11), end=c(2018, 6))
   if(i<x){
     PE.VAR=VARf.ts-test_h6
     PE.RW=RWf_h6.ts-test_h6
     m3[i,9]=mean((PE.VAR)^2)/mean((PE.RW)^2)
-    m3[i,10]=dm.test(PE.VAR, PE.RW, alternative = "two.sided", h=6, power=pw)$p.value
+    m3[i,10]=dm.test(PE.VAR, PE.RW, alternative = "less", h=6, power=pw)$p.value
     m3[i,11]=MDirAcc(test_h6, VARf.ts)
     m3[i,12]=eriksPT_test(test_h6, VARf.ts)[pt]
   } else{
     PE.dVAR=VARf.ts-test_dh6
     PE.dRW=test_dh6
     m3[i,9]=mean((PE.dVAR^2))/ mean((PE.dRW)^2)
-    m3[i,10]=dm.test(PE.dVAR, PE.dRW, alternative = "two.sided", h=6, power=pw)$p.value
+    m3[i,10]=dm.test(PE.dVAR, PE.dRW, alternative = "less", h=6, power=pw)$p.value
     m3[i,11]=MDirAcc(test_dh6, VARf.ts)
     m3[i,12]=eriksPT_test(test_dh6, VARf.ts)[pt]
   }
 }
 for (i in 1:nc) {
-  VARf.ts = ts(mO_h9[1:175,i], frequency=12, start=c(2003, 12), end=c(2018, 6))
+  VARf.ts = ts(mO_h9[1:173,i], frequency=12, start=c(2004, 2), end=c(2018, 6))
   if(i<x){
     PE.VAR=VARf.ts-test_h9
     PE.RW=RWf_h9.ts-test_h9
     m3[i,13]=mean((PE.VAR)^2)/mean((PE.RW)^2)
-    m3[i,14]=dm.test(PE.VAR, PE.RW, alternative = "two.sided", h=9, power=pw)$p.value
+    m3[i,14]=dm.test(PE.VAR, PE.RW, alternative = "less", h=9, power=pw)$p.value
     m3[i,15]=MDirAcc(test_h9, VARf.ts)
     m3[i,16]=eriksPT_test(test_h9, VARf.ts)[pt]
   } else{
     PE.dVAR=VARf.ts-test_dh9
     PE.dRW=test_dh9
     m3[i,13]=mean((PE.dVAR^2))/ mean((PE.dRW)^2)
-    m3[i,14]=dm.test(PE.dVAR, PE.dRW, alternative = "two.sided", h=9, power=pw)$p.value
+    m3[i,14]=dm.test(PE.dVAR, PE.dRW, alternative = "less", h=9, power=pw)$p.value
     m3[i,15]=MDirAcc(test_dh9, VARf.ts)
     m3[i,16]=eriksPT_test(test_dh9, VARf.ts)[2]
   }
 }
 for (i in 1:nc) {
-  VARf.ts = ts(mO_h12[1:173,i], frequency=12, start=c(2004, 2), end=c(2018, 6))
+  VARf.ts = ts(mO_h12[1:170,i], frequency=12, start=c(2004, 5), end=c(2018, 6))
   if(i<x){
     PE.VAR=VARf.ts-test_h12
     PE.RW=RWf_h12.ts-test_h12
     m3[i,17]=mean((PE.VAR)^2)/mean((PE.RW)^2)
-    m3[i,18]=dm.test(PE.VAR, PE.RW, alternative = "two.sided", h=12, power=pw)$p.value
+    m3[i,18]=dm.test(PE.VAR, PE.RW, alternative = "less", h=12, power=pw)$p.value
     m3[i,19]=MDirAcc(test_h12, VARf.ts)
     m3[i,20]=eriksPT_test(test_h12, VARf.ts)[pt]
   } else{
     PE.dVAR=VARf.ts-test_dh12
     PE.dRW=test_dh12
     m3[i,17]=mean((PE.dVAR^2))/ mean((PE.dRW)^2)
-    m3[i,18]=dm.test(PE.dVAR, PE.dRW, alternative = "two.sided", h=12, power=pw)$p.value
+    m3[i,18]=dm.test(PE.dVAR, PE.dRW, alternative = "less", h=12, power=pw)$p.value
     m3[i,19]=MDirAcc(test_dh12, VARf.ts)
     m3[i,20]=eriksPT_test(test_dh12, VARf.ts)[pt]
   }
@@ -655,7 +635,7 @@ m3.df = as.data.frame(m3, row.names = c("HamiltonOECD1","HamiltonOECD2","Hamilto
                                       "Diff1", "Diff2"), 
                      colnames(1,2,3,4,5,6,7,8,9,10))
 m3.df =round(m3.df, digits = 3)
-grid.table(m3.df)
+#grid.table(m3.df)
 m3.df
 
 
