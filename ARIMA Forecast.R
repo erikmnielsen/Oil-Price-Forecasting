@@ -28,8 +28,8 @@ eriksPT_test=function(Actual, Forecast){
   v=(p%*%(1-p))/n
   w=(((2%*%Pz-1)^2%*%Py%*%(1-Py))/n)+(((2%*%Py-1)^2%*%Pz%*%(1-Pz))/n)+((4%*%Py%*%Pz%*%(1-Py)%*%(1-Pz))/n^2)
   
-  Sn=((p%*%(1-p))/n)^(-1/2)*(Pyz-p) #sidste ligning s.461 i Timmermann
-  Sn2=(Pyz-p)/sqrt(((Pyz%*%(1-Pyz))/n)-w) #ligning 6 i Timmermann
+  #Sn=((p%*%(1-p))/n)^(-1/2)*(Pyz-p) #sidste ligning s.461 i Timmermann
+  #Sn2=(Pyz-p)/sqrt(((Pyz%*%(1-Pyz))/n)-w) #ligning 6 i Timmermann
   PT=(Pyz-p)/sqrt(v-w) #http://www.real-statistics.com/time-series-analysis/forecasting-accuracy/pesaran-timmermann-test/
   pv=1-pnorm(PT)
   summary=c(PT,pv)
@@ -72,7 +72,7 @@ m_h12=matrix(nrow=182, ncol=nc)
 
 for (j in 1:nc){
   for (i in 0:181) {
-    train = lRO.ts[1:(364+0), ]
+    train = lRO.ts[1:(364+i), ]
     
     if (j==1){arimaf = Arima(train, order=c(1,0,0))}
     if (j==2){arimaf = Arima(train, order=c(12,0,0))}
@@ -161,7 +161,6 @@ for (i in 1:nc) {
     PE.RW=RWf_h6.ts-test_h6
     m[i,9]=mean((PE.ARIMA)^2)/mean((PE.RW)^2)
     m[i,10]=dm.test(PE.ARIMA, PE.RW, alternative = "less", h=6, power=pw)$p.value
-    #m[i,11]=hit.ratio(y=test_h6,y.hat=arimaf.ts,d=FALSE)
     m[i,11]=MDirAcc(test_h6, arimaf.ts)
     m[i,12]=eriksPT_test(test_h6, arimaf.ts)[pt]
   } else{
@@ -221,16 +220,10 @@ m.df = as.data.frame(m, row.names = c("AR(1)", "AR(12)", "AR(24)", "ARMA(1,1)",
                                       "ARIMA(1,1,0)", "ARIMA(11,1,0)", "ARIMA(23,1,0)", 
                                       "ARIMA(0,1,1)"))
 m.df =round(m.df, digits = 3)
-grid.table(m.df)
+#grid.table(m.df)
 m.df
 
 
-
-
-
-
-
-m #fraction of random walk - should be <1 to beat the RW
 
 
 arimaf.ts = ts(m_h1[1:213,1], frequency=12, start=c(1991, 12), end=c(2009, 8))
