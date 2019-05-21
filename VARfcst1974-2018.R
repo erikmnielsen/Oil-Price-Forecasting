@@ -83,12 +83,13 @@ nwPT_test=function(Actual,Forecast){
 
 # Data Preparation --------------------------------------------------------
 
-data <- read_excel("VariableHam74.xlsx")
+data <- read_excel("VariableHam74New.xlsx")
 data <- as.data.frame(data)
 data$RO <- (data$WTI/(data$'CPI US'/100))
 data$lRO <- log(data$RO)
 data$l_diff_RO <- diff.xts(data$lRO, differences = 1)
-data$OP <- log(data$`World oil prod`) - lag.xts(log(data$`World oil prod`),k = 1) 
+data$OP <- data$Prod
+#data$OP <- log(data$`World oil prod`) - lag.xts(log(data$`World oil prod`),k = 1) 
 data$OI <- (data$`OECD Pet inv`/data$`US Pet inv`)*data$`US crude inv`
 data$dOI <- diff.xts(data$OI,differences = 1)
 data$Date <- as.yearmon(format(data$Date), "%Y-%m-%d") #"Q%q%Y"
