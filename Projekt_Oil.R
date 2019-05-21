@@ -93,6 +93,22 @@ testROt <- ur.df(RO,type="trend",lags = 6)
 testROd <- ur.df(RO,type="drift", lags = 10, selectlags = "AIC")
 testROd <- ur.df(RO,type="drift", lags = 6)
 
+################ møde hos erik
+testROt <- ur.df(RO,type="trend",lags = 24)
+testROd <- ur.df(RO,type="drift", lags = 12)
+testROn <- ur.df(RO,type="none", lags = 24)
+summary(testROt)
+summary(testROd)
+summary(testROn)
+
+plot(lRO)
+
+Box.test(testROd@res,lag=6, type="Lj")
+plot(testROn@res)
+
+Box.test(testROn@res,lag=1, type="Lj")
+##################
+
 
 ddRO = diff(RO)
 testROn <- ur.df(ddRO,type="drift", lags = 10, selectlags = "AIC")

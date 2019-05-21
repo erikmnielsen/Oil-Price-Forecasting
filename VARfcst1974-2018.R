@@ -85,41 +85,32 @@ nwPT_test=function(Actual,Forecast){
 
 data <- read_excel("VariableHam74New.xlsx")
 data <- as.data.frame(data)
-#data$CPI <- log(data$`CPI US`) - lag.xts(log(data$`CPI US`),k = 1)
-#data$CPI_d <- diff.xts(data$lRO, differences = 1)
-data$lRO <- (data$WTI/(data$`CPI US`/100)) ##den hedder lRO, men det er IKKE log. 
-#data$lRO <- log(data$RO)
+data$RO <- (data$WTI/(data$'CPI US'/100))
+data$lRO <- log(data$RO)
 data$l_diff_RO <- diff.xts(data$lRO, differences = 1)
-#data$OP <- log(data$`World oil prod`) - lag.xts(log(data$`World oil prod`),k = 1) 
 data$OP <- data$Prod
+#data$OP <- log(data$`World oil prod`) - lag.xts(log(data$`World oil prod`),k = 1) 
 data$OI <- (data$`OECD Pet inv`/data$`US Pet inv`)*data$`US crude inv`
 data$dOI <- diff.xts(data$OI,differences = 1)
 data$Date <- as.yearmon(format(data$Date), "%Y-%m-%d") #"Q%q%Y"
 
-#data$l_prod <- log(data$`World oil prod`)
-#data$l_d_prod <- diff.xts(data$l_prod,differences = 1)
-#data$OP <- diff.xts(data$`World oil prod`,differences = 1)
-#data$l_prod100 <- 100*(data$l_prod)
-#data$OP <- diff.xts(data$l_prod100,differences = 1)
-
 data.xts <- xts(data[-1], data[[1]])
 data.xts <- data.xts["1974-01/2018-06"]
+
 
 # VAR modeller
 
 nc=20
 x=19
 
-autoplot(VAR.ts)
-subset(VAR.ts[, "lRO"],start=1,end = 364)
 
 #Killian
 {
-  m_h1=matrix(nrow=182, ncol=nc)
-  m_h3=matrix(nrow=182, ncol=nc)
-  m_h6=matrix(nrow=182, ncol=nc)
-  m_h9=matrix(nrow=182, ncol=nc)
-  m_h12=matrix(nrow=182, ncol=nc)
+  m_h1=matrix(nrow=320, ncol=nc)
+  m_h3=matrix(nrow=320, ncol=nc)
+  m_h6=matrix(nrow=320, ncol=nc)
+  m_h9=matrix(nrow=320, ncol=nc)
+  m_h12=matrix(nrow=320, ncol=nc)
   
   VAR.ts <- ts(data.xts[-1,c("Kilian","dOI","lRO","OP")],frequency=12,start=c(1974, 2), end=c(2018, 6))
   VAR2.ts <- ts(data.xts[-1,c("Kilian","lRO","OP")],frequency=12,start=c(1974, 2), end=c(2018, 6)) 
@@ -130,14 +121,14 @@ subset(VAR.ts[, "lRO"],start=1,end = 364)
   dVAR.ts <- ts(data.xts[-1,c("Kilian","dOI","l_diff_RO","OP")] ,frequency=12,start=c(1974, 2), end=c(2018, 6))
 }
 for (j in 1:nc){
-  for (i in 0:181) {
-    train = VAR.ts[1:(364-12+i), ]
-    train2 = VAR2.ts[1:(364-12+i), ]
-    train3 = VAR3.ts[1:(364-12+i), ]
-    train4 = VAR4.ts[1:(364-12+i), ]
-    train5 = VAR5.ts[1:(364-12+i), ]
-    train6 = VAR6.ts[1:(364-12+i), ]
-    traind = dVAR.ts[1:(364-12+i), ]
+  for (i in 0:319) {
+    train = VAR.ts[1:(214+i), ]
+    train2 = VAR2.ts[1:(214+i), ]
+    train3 = VAR3.ts[1:(214+i), ]
+    train4 = VAR4.ts[1:(214+i), ]
+    train5 = VAR5.ts[1:(214+i), ]
+    train6 = VAR6.ts[1:(214+i), ]
+    traind = dVAR.ts[1:(214+i), ]
     
     if (j==1){VARf <- VAR(train, p=1)}
     if (j==2){VARf <- VAR(train, p=12)}
@@ -182,11 +173,11 @@ for (j in 1:nc){
 
 #Hamilton
 {
-  mH_h1=matrix(nrow=182, ncol=nc)
-  mH_h3=matrix(nrow=182, ncol=nc)
-  mH_h6=matrix(nrow=182, ncol=nc)
-  mH_h9=matrix(nrow=182, ncol=nc)
-  mH_h12=matrix(nrow=182, ncol=nc)
+  mH_h1=matrix(nrow=320, ncol=nc)
+  mH_h3=matrix(nrow=320, ncol=nc)
+  mH_h6=matrix(nrow=320, ncol=nc)
+  mH_h9=matrix(nrow=320, ncol=nc)
+  mH_h12=matrix(nrow=320, ncol=nc)
   
   VAR.ts <- ts(data.xts[-1,c("Hamilton","dOI","lRO","OP")],frequency=12,start=c(1974, 2), end=c(2018, 6))
   VAR2.ts <- ts(data.xts[-1,c("Hamilton","lRO","OP")],frequency=12,start=c(1974, 2), end=c(2018, 6)) 
@@ -197,14 +188,14 @@ for (j in 1:nc){
   dVAR.ts <- ts(data.xts[-1,c("Hamilton","dOI","l_diff_RO","OP")] ,frequency=12,start=c(1974, 2), end=c(2018, 6))
 }
 for (j in 1:nc){
-  for (i in 0:181) {
-    train = VAR.ts[1:(364-12+i), ]
-    train2 = VAR2.ts[1:(364-12+i), ]
-    train3 = VAR3.ts[1:(364-12+i), ]
-    train4 = VAR4.ts[1:(364-12+i), ]
-    train5 = VAR5.ts[1:(364-12+i), ]
-    train6 = VAR6.ts[1:(364-12+i), ]
-    traind = dVAR.ts[1:(364-12+i), ]
+  for (i in 0:319) {
+    train = VAR.ts[1:(214+i), ]
+    train2 = VAR2.ts[1:(214+i), ]
+    train3 = VAR3.ts[1:(214+i), ]
+    train4 = VAR4.ts[1:(214+i), ]
+    train5 = VAR5.ts[1:(214+i), ]
+    train6 = VAR6.ts[1:(214+i), ]
+    traind = dVAR.ts[1:(214+i), ]
     
     if (j==1){VARf <- VAR(train, p=1)}
     if (j==2){VARf <- VAR(train, p=12)}
@@ -249,11 +240,11 @@ for (j in 1:nc){
 
 #Hamilton OECD
 {
-  mO_h1=matrix(nrow=182, ncol=nc)
-  mO_h3=matrix(nrow=182, ncol=nc)
-  mO_h6=matrix(nrow=182, ncol=nc)
-  mO_h9=matrix(nrow=182, ncol=nc)
-  mO_h12=matrix(nrow=182, ncol=nc)
+  mO_h1=matrix(nrow=320, ncol=nc)
+  mO_h3=matrix(nrow=320, ncol=nc)
+  mO_h6=matrix(nrow=320, ncol=nc)
+  mO_h9=matrix(nrow=320, ncol=nc)
+  mO_h12=matrix(nrow=320, ncol=nc)
   
   VAR.ts <- ts(data.xts[-1,c("HamiltonOECD","dOI","lRO","OP")],frequency=12,start=c(1974, 2), end=c(2018, 6))
   VAR2.ts <- ts(data.xts[-1,c("HamiltonOECD","lRO","OP")],frequency=12,start=c(1974, 2), end=c(2018, 6)) 
@@ -264,14 +255,14 @@ for (j in 1:nc){
   dVAR.ts <- ts(data.xts[-1,c("HamiltonOECD","dOI","l_diff_RO","OP")] ,frequency=12,start=c(1974, 2), end=c(2018, 6))
 }
 for (j in 1:nc){
-  for (i in 0:181) {
-    train = VAR.ts[1:(364-12+i), ]
-    train2 = VAR2.ts[1:(364-12+i), ]
-    train3 = VAR3.ts[1:(364-12+i), ]
-    train4 = VAR4.ts[1:(364-12+i), ]
-    train5 = VAR5.ts[1:(364-12+i), ]
-    train6 = VAR6.ts[1:(364-12+i), ]
-    traind = dVAR.ts[1:(364-12+i), ]
+  for (i in 0:319) {
+    train = VAR.ts[1:(214+i), ]
+    train2 = VAR2.ts[1:(214+i), ]
+    train3 = VAR3.ts[1:(214+i), ]
+    train4 = VAR4.ts[1:(214+i), ]
+    train5 = VAR5.ts[1:(214+i), ]
+    train6 = VAR6.ts[1:(214+i), ]
+    traind = dVAR.ts[1:(214+i), ]
     
     if (j==1){VARf <- VAR(train, p=1)}
     if (j==2){VARf <- VAR(train, p=12)}
@@ -316,24 +307,24 @@ for (j in 1:nc){
 
 # Forecast Evaluation -----------------------------------------------------------------------
 {
-  test_h1 = subset(VAR.ts[, "lRO"],start=365-12,end = 545-12)
-  test_dh1 = subset(dVAR.ts[, "l_diff_RO"],start=365-12,end = 545-12)
-  test_h3 = subset(VAR.ts[, "lRO"],start=367-12,end = 545-12)
-  test_dh3 = subset(dVAR.ts[, "l_diff_RO"],start=367-12,end = 545-12)
-  test_h6 = subset(VAR.ts[, "lRO"],start=370-12,end = 545-12)
-  test_dh6 = subset(dVAR.ts[, "l_diff_RO"],start=370-12,end = 545-12)
-  test_h9 = subset(VAR.ts[, "lRO"],start=373-12,end = 545-12)
-  test_dh9 = subset(dVAR.ts[, "l_diff_RO"],start=373-12,end = 545-12)
-  test_h12 = subset(VAR.ts[, "lRO"],start=376-12,end = 545-12)
-  test_dh12 = subset(dVAR.ts[, "l_diff_RO"],start=376-12,end = 545-12)
+  test_h1 = subset(VAR.ts[, "lRO"],start=215,end = 533)
+  test_dh1 = subset(dVAR.ts[, "l_diff_RO"],start=215,end = 533)
+  test_h3 = subset(VAR.ts[, "lRO"],start=217,end = 533)
+  test_dh3 = subset(dVAR.ts[, "l_diff_RO"],start=217,end = 533)
+  test_h6 = subset(VAR.ts[, "lRO"],start=220,end = 533)
+  test_dh6 = subset(dVAR.ts[, "l_diff_RO"],start=220,end = 533)
+  test_h9 = subset(VAR.ts[, "lRO"],start=223,end = 533)
+  test_dh9 = subset(dVAR.ts[, "l_diff_RO"],start=223,end = 533)
+  test_h12 = subset(VAR.ts[, "lRO"],start=226,end = 533)
+  test_dh12 = subset(dVAR.ts[, "l_diff_RO"],start=226,end = 533)
   
-  RW = VAR.ts[-c(1:351), "lRO"]
+  RW = VAR.ts[-c(1:213), "lRO"]
   
-  RWf_h1.ts = ts(RW[1:181], frequency=12, start=c(2003, 6), end=c(2018, 6))
-  RWf_h3.ts = ts(RW[1:179], frequency=12, start=c(2003, 8), end=c(2018, 6))
-  RWf_h6.ts = ts(RW[1:176], frequency=12, start=c(2003, 11), end=c(2018, 6))
-  RWf_h9.ts = ts(RW[1:173], frequency=12, start=c(2004, 2), end=c(2018, 6))
-  RWf_h12.ts = ts(RW[1:170], frequency=12, start=c(2004, 5), end=c(2018, 6))
+  RWf_h1.ts = ts(RW[1:319], frequency=12, start=c(1991, 12), end=c(2018, 6))
+  RWf_h3.ts = ts(RW[1:317], frequency=12, start=c(1992, 2), end=c(2018, 6))
+  RWf_h6.ts = ts(RW[1:314], frequency=12, start=c(1992, 5), end=c(2018, 6))
+  RWf_h9.ts = ts(RW[1:311], frequency=12, start=c(1992, 8), end=c(2018, 6))
+  RWf_h12.ts = ts(RW[1:308], frequency=12, start=c(1992, 11), end=c(2018, 6))
 }
 
 m=matrix(nrow=nc, ncol=20)
@@ -342,7 +333,7 @@ pt=2
 
 
 for (i in 1:nc) {
-  VARf.ts = ts(m_h1[1:181,i], frequency=12, start=c(2003, 6), end=c(2018, 6))
+  VARf.ts = ts(m_h1[1:319,i], frequency=12, start=c(1991, 12), end=c(2018, 6))
   if(i<x){
     PE.VAR=VARf.ts-test_h1
     PE.RW=RWf_h1.ts-test_h1
@@ -360,7 +351,7 @@ for (i in 1:nc) {
   }
 }
 for (i in 1:nc) {
-  VARf.ts = ts(m_h3[1:179,i], frequency=12, start=c(2003, 8), end=c(2018, 6))
+  VARf.ts = ts(m_h3[1:317,i], frequency=12, start=c(1992, 2), end=c(2018, 6))
   if(i<x){
     PE.VAR=VARf.ts-test_h3
     PE.RW=RWf_h3.ts-test_h3
@@ -378,7 +369,7 @@ for (i in 1:nc) {
   }
 }
 for (i in 1:nc) {
-  VARf.ts = ts(m_h6[1:176,i], frequency=12, start=c(2003, 11), end=c(2018, 6))
+  VARf.ts = ts(m_h6[1:314,i], frequency=12, start=c(1992, 5), end=c(2018, 6))
   if(i<x){
     PE.VAR=VARf.ts-test_h6
     PE.RW=RWf_h6.ts-test_h6
@@ -396,7 +387,7 @@ for (i in 1:nc) {
   }
 }
 for (i in 1:nc) {
-  VARf.ts = ts(m_h9[1:173,i], frequency=12, start=c(2004, 2), end=c(2018, 6))
+  VARf.ts = ts(m_h9[1:311,i], frequency=12, start=c(1992, 8), end=c(2018, 6))
   if(i<x){
     PE.VAR=VARf.ts-test_h9
     PE.RW=RWf_h9.ts-test_h9
@@ -414,7 +405,7 @@ for (i in 1:nc) {
   }
 }
 for (i in 1:nc) {
-  VARf.ts = ts(m_h12[1:170,i], frequency=12, start=c(2004, 5), end=c(2018, 6))
+  VARf.ts = ts(m_h12[1:308,i], frequency=12, start=c(1992, 11), end=c(2018, 6))
   if(i<x){
     PE.VAR=VARf.ts-test_h12
     PE.RW=RWf_h12.ts-test_h12
@@ -456,7 +447,7 @@ pt=2
 
 
 for (i in 1:nc) {
-  VARf.ts = ts(mH_h1[1:181,i], frequency=12, start=c(2003, 6), end=c(2018, 6))
+  VARf.ts = ts(m_h1[1:319,i], frequency=12, start=c(1991, 12), end=c(2018, 6))
   if(i<x){
     PE.VAR=VARf.ts-test_h1
     PE.RW=RWf_h1.ts-test_h1
@@ -474,7 +465,7 @@ for (i in 1:nc) {
   }
 }
 for (i in 1:nc) {
-  VARf.ts = ts(mH_h3[1:179,i], frequency=12, start=c(2003, 8), end=c(2018, 6))
+  VARf.ts = ts(m_h3[1:317,i], frequency=12, start=c(1992, 2), end=c(2018, 6))
   if(i<x){
     PE.VAR=VARf.ts-test_h3
     PE.RW=RWf_h3.ts-test_h3
@@ -492,7 +483,7 @@ for (i in 1:nc) {
   }
 }
 for (i in 1:nc) {
-  VARf.ts = ts(mH_h6[1:176,i], frequency=12, start=c(2003, 11), end=c(2018, 6))
+  VARf.ts = ts(m_h6[1:314,i], frequency=12, start=c(1992, 5), end=c(2018, 6))
   if(i<x){
     PE.VAR=VARf.ts-test_h6
     PE.RW=RWf_h6.ts-test_h6
@@ -510,7 +501,7 @@ for (i in 1:nc) {
   }
 }
 for (i in 1:nc) {
-  VARf.ts = ts(mH_h9[1:173,i], frequency=12, start=c(2004, 2), end=c(2018, 6))
+  VARf.ts = ts(m_h9[1:311,i], frequency=12, start=c(1992, 8), end=c(2018, 6))
   if(i<x){
     PE.VAR=VARf.ts-test_h9
     PE.RW=RWf_h9.ts-test_h9
@@ -528,7 +519,7 @@ for (i in 1:nc) {
   }
 }
 for (i in 1:nc) {
-  VARf.ts = ts(mH_h12[1:170,i], frequency=12, start=c(2004, 5), end=c(2018, 6))
+  VARf.ts = ts(m_h12[1:308,i], frequency=12, start=c(1992, 11), end=c(2018, 6))
   if(i<x){
     PE.VAR=VARf.ts-test_h12
     PE.RW=RWf_h12.ts-test_h12
@@ -551,13 +542,13 @@ colnames(m2) = c("h=1","pv","SR","pv","h=3","pv","SR","pv","h=6","pv","SR","pv",
 p = c(1,12,24,1,12,24,1,12,24,1,12,24,1,12,24,1,12,24,12,24)
 m2 = cbind(p, m2)
 
-m2.df = as.data.frame(m2, row.names = c("Hamilton1","Hamilton2","Hamilton3",
-                                      "÷ Inv1", "÷ Inv2", "÷ Inv3",
-                                      "÷ Inv & Prod1", "÷ Inv & Prod2", "÷ Inv & Prod3",
-                                      "÷ Act & Prod1", "÷ Act & Prod2", "÷ Act & Prod3",
-                                      "÷ Act & Inv1", "÷ Act & Inv2", "÷ Act & Inv3",
-                                      "÷ Prod1", "÷ Prod2", "÷ Prod3",
-                                      "Diff1", "Diff2"))
+m2.df = as.data.frame(m, row.names = c("Hamilton1","Hamilton2","Hamilton3",
+                                       "÷ Inv1", "÷ Inv2", "÷ Inv3",
+                                       "÷ Inv & Prod1", "÷ Inv & Prod2", "÷ Inv & Prod3",
+                                       "÷ Act & Prod1", "÷ Act & Prod2", "÷ Act & Prod3",
+                                       "÷ Act & Inv1", "÷ Act & Inv2", "÷ Act & Inv3",
+                                       "÷ Prod1", "÷ Prod2", "÷ Prod3",
+                                       "Diff1", "Diff2"))
 m2.df =round(m2.df, digits = 3)
 #grid.table(m2.df)
 m2.df
@@ -566,12 +557,12 @@ m2.df
 
 #HAMILTON OECD
 m3=matrix(nrow=nc, ncol=20)
-pw=2
+pw=1
 pt=2
 
 
 for (i in 1:nc) {
-  VARf.ts = ts(mO_h1[1:181,i], frequency=12, start=c(2003, 6), end=c(2018, 6))
+  VARf.ts = ts(m_h1[1:319,i], frequency=12, start=c(1991, 12), end=c(2018, 6))
   if(i<x){
     PE.VAR=VARf.ts-test_h1
     PE.RW=RWf_h1.ts-test_h1
@@ -589,7 +580,7 @@ for (i in 1:nc) {
   }
 }
 for (i in 1:nc) {
-  VARf.ts = ts(mO_h3[1:179,i], frequency=12, start=c(2003, 8), end=c(2018, 6))
+  VARf.ts = ts(m_h3[1:317,i], frequency=12, start=c(1992, 2), end=c(2018, 6))
   if(i<x){
     PE.VAR=VARf.ts-test_h3
     PE.RW=RWf_h3.ts-test_h3
@@ -607,7 +598,7 @@ for (i in 1:nc) {
   }
 }
 for (i in 1:nc) {
-  VARf.ts = ts(mO_h6[1:176,i], frequency=12, start=c(2003, 11), end=c(2018, 6))
+  VARf.ts = ts(m_h6[1:314,i], frequency=12, start=c(1992, 5), end=c(2018, 6))
   if(i<x){
     PE.VAR=VARf.ts-test_h6
     PE.RW=RWf_h6.ts-test_h6
@@ -625,7 +616,7 @@ for (i in 1:nc) {
   }
 }
 for (i in 1:nc) {
-  VARf.ts = ts(mO_h9[1:173,i], frequency=12, start=c(2004, 2), end=c(2018, 6))
+  VARf.ts = ts(m_h9[1:311,i], frequency=12, start=c(1992, 8), end=c(2018, 6))
   if(i<x){
     PE.VAR=VARf.ts-test_h9
     PE.RW=RWf_h9.ts-test_h9
@@ -643,7 +634,7 @@ for (i in 1:nc) {
   }
 }
 for (i in 1:nc) {
-  VARf.ts = ts(mO_h12[1:170,i], frequency=12, start=c(2004, 5), end=c(2018, 6))
+  VARf.ts = ts(m_h12[1:308,i], frequency=12, start=c(1992, 11), end=c(2018, 6))
   if(i<x){
     PE.VAR=VARf.ts-test_h12
     PE.RW=RWf_h12.ts-test_h12
@@ -666,13 +657,13 @@ colnames(m3) = c("h=1","pv","SR","pv","h=3","pv","SR","pv","h=6","pv","SR","pv",
 p = c(1,12,24,1,12,24,1,12,24,1,12,24,1,12,24,1,12,24,12,24)
 m3 = cbind(p, m3)
 
-m3.df = as.data.frame(m3, row.names = c("HamiltonOECD1","HamiltonOECD2","HamiltonOECD3",
-                                      "÷ Inv1", "÷ Inv2", "÷ Inv3",
-                                      "÷ Inv & Prod1", "÷ Inv & Prod2", "÷ Inv & Prod3",
-                                      "÷ Act & Prod1", "÷ Act & Prod2", "÷ Act & Prod3",
-                                      "÷ Act & Inv1", "÷ Act & Inv2", "÷ Act & Inv3",
-                                      "÷ Prod1", "÷ Prod2", "÷ Prod3",
-                                      "Diff1", "Diff2"))
+m3.df = as.data.frame(m, row.names = c("HamiltonOECD1","HamiltonOECD2","HamiltonOECD3",
+                                       "÷ Inv1", "÷ Inv2", "÷ Inv3",
+                                       "÷ Inv & Prod1", "÷ Inv & Prod2", "÷ Inv & Prod3",
+                                       "÷ Act & Prod1", "÷ Act & Prod2", "÷ Act & Prod3",
+                                       "÷ Act & Inv1", "÷ Act & Inv2", "÷ Act & Inv3",
+                                       "÷ Prod1", "÷ Prod2", "÷ Prod3",
+                                       "Diff1", "Diff2"))
 m3.df =round(m3.df, digits = 3)
 #grid.table(m3.df)
 m3.df
