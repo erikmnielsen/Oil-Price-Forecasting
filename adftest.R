@@ -14,12 +14,13 @@ library(dynlm)
 data <- read_excel("VariableHam.xlsx")
 data <- as.data.frame(data)
 data$RO <- (data$WTI/(data$`CPI US`/100))
-data$lRO <- log(data$RO)
-data$l_diff_RO <- diff.xts(data$lRO, differences = 1)
+#data$lRO <- log(data$RO)
+#data$l_diff_RO <- diff.xts(data$lRO, differences = 1)
 data$OP <- log(data$`World oil prod`) - lag.xts(log(data$`World oil prod`),k = 1) 
 data$OI <- (data$`OECD Pet inv`/data$`US Pet inv`)*data$`US crude inv`
 data$dOI <- diff.xts(data$OI,differences = 1)
 data$Date <- as.yearmon(format(data$Date), "%Y-%m-%d") #"Q%q%Y"
+
 
 data.xts <- xts(data[-1], data[[1]])
 data.xts <- data.xts["1973-01/2018-06"]
@@ -34,10 +35,10 @@ Ham = data.xts$Hamilton
 RO = data.xts$RO
 lRO = data.xts$lRO
 OI = data.xts$OI
+dOI = na.omit(data.xts$dOI)
 Kilian = data.xts$Kilian
 HamOECD = data.xts$HamiltonOECD
 
-data.xts
 # World oil production ----------------------------------------------------
 testt = (ur.df(WOP,type="trend",lags = 11))
 summary(testt) #stationær
@@ -49,43 +50,26 @@ lags = 1
 temps = seq_along(diff.x)
 summary(dynlm(diff.x ~1 + temps + lag(x,-1) + lag(diff.x,-1) + lag(diff.x,-2) + lag(diff.x,-3) + lag(diff.x,-4) + lag(diff.x,-5) + lag(diff.x,-6) + + lag(diff.x,-7) + lag(diff.x,-8) + lag(diff.x,-9) + lag(diff.x,-10) + lag(diff.x,-11))) #stationær
 
-# lRO ----------------------------------------------------------------------
+# RO ----------------------------------------------------------------------
 summary(ur.df(lRO,type="trend",lags = 6)) #ikke-stationær
 
-x = ts(lRO)
+x = ts(RO)
 diff.x = ts(lag(x,1) - x)
 n = length(diff.x)
 temps = seq_along(diff.x)
 summary(dynlm(diff.x ~1 + temps + lag(x,-1) + lag(diff.x,-1) + lag(diff.x,-2) + lag(diff.x,-3) + lag(diff.x,-4) + lag(diff.x,-5) + lag(diff.x,-6)))
 
-summary(ur.df(lRO,type="drift", lags = 6)) #på grænsen til stationær
+summary(ur.df(RO,type="drift", lags = 6)) #stationær
 
 summary(dynlm(diff.x ~1 + lag(x,-1) + lag(diff.x,-1) + lag(diff.x,-2) + lag(diff.x,-3) + lag(diff.x,-4) + lag(diff.x,-5) + lag(diff.x,-6)))
 
-summary(ur.df(lRO,type="none", lags = 6))
-
-summary(dynlm(diff.x ~0 + lag(x,-1) + lag(diff.x,-1) + lag(diff.x,-2) + lag(diff.x,-3) + lag(diff.x,-4) + lag(diff.x,-5) + lag(diff.x,-6)))
-
-
 # Oil inventory -----------------------------------------------------------
-summary(ur.df(OI,type="trend",lags = 12)) #ikke-stationær
+summary(ur.df(dOI,type="trend",lags = 11)) #stationær
 
-plot(OI)
-
-x = ts(OI)
+x = ts(dOI)
 diff.x = ts(lag(x,1) - x)
 tt = seq_along(diff.x)
 summary(dynlm(diff.x ~1 + tt + lag(x,-1) + lag(diff.x,-1) + lag(diff.x,-2) + lag(diff.x,-3) + lag(diff.x,-4) + lag(diff.x,-5) + lag(diff.x,-6) + + lag(diff.x,-7) + lag(diff.x,-8) + lag(diff.x,-9) + lag(diff.x,-10) + lag(diff.x,-11) + lag(diff.x,-12)))
-
-summary(ur.df(OI, type="drift", lags = 12))
-summary(dynlm(diff.x ~1 + lag(x,-1) + lag(diff.x,-1) + lag(diff.x,-2) + lag(diff.x,-3) + lag(diff.x,-4) + lag(diff.x,-5) + lag(diff.x,-6) + + lag(diff.x,-7) + lag(diff.x,-8) + lag(diff.x,-9) + lag(diff.x,-10) + lag(diff.x,-11) + lag(diff.x,-12)))
-
-summary(dynlm(diff.x ~1 + tt + lag(diff.x,-1) + lag(diff.x,-2) + lag(diff.x,-3) + lag(diff.x,-4) + lag(diff.x,-5) + lag(diff.x,-6) + + lag(diff.x,-7) + lag(diff.x,-8) + lag(diff.x,-9) + lag(diff.x,-10) + lag(diff.x,-11) + lag(diff.x,-12)))
-summary(dynlm(diff.x ~1 + tt + lag(x,-1) + lag(diff.x,-1) + lag(diff.x,-2) + lag(diff.x,-3) + lag(diff.x,-4) + lag(diff.x,-5) + lag(diff.x,-6) + + lag(diff.x,-7) + lag(diff.x,-8) + lag(diff.x,-9) + lag(diff.x,-10) + lag(diff.x,-11) + lag(diff.x,-12)))
-
-summary(ur.df(OI,type="none", lags = 12))
-
-summary(dynlm(diff.x ~1 + lag(x,-1) + lag(diff.x,-1)))
 
 # Hamilton variable -------------------------------------------------------
 summary(ur.df(Ham,type="trend",lags = 11)) #stationær
@@ -113,6 +97,22 @@ diff.x = ts(lag(x,1) - x)
 tt = seq_along(diff.x)
 summary(dynlm(diff.x ~1 + tt + lag(x,-1) + lag(diff.x,-1) + + lag(diff.x,-2) + lag(diff.x,-3) + lag(diff.x,-4) + lag(diff.x,-5) + lag(diff.x,-6) + + lag(diff.x,-7) + lag(diff.x,-8)))
 # stationær
+
+
+
+
+
+data <- read_excel("VariableHam74New.xlsx")
+data <- as.data.frame(data)
+Prod = data$Prod
+
+# Prod -------------------------------------------------------
+summary(ur.df(Prod,type="trend",lags = 12)) #stationær
+
+x = ts(Prod)
+diff.x = ts(lag(x,1) - x)
+tt = seq_along(diff.x)
+summary(dynlm(diff.x ~1 + tt + lag(x,-1) + lag(diff.x,-1) + + lag(diff.x,-2) + lag(diff.x,-3) + lag(diff.x,-4) + lag(diff.x,-5) + lag(diff.x,-6) + + lag(diff.x,-7) + lag(diff.x,-8) + lag(diff.x,-9) + lag(diff.x,-10) + lag(diff.x,-11) + lag(diff.x,-12)))
 
 
 
