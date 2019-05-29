@@ -199,6 +199,7 @@ m #fraction of random walk - should be <1 to beat the RW
 
 fit = Arima(RO, order=c(1,0,0), method = "CSS")
 autoplot(fit)$data
+Box.test(residuals(fit), type = c("Ljung-Box"))
 fit = Arima(RO, order=c(2,0,0), method = "CSS")
 autoplot(fit)$data
 fit = Arima(RO, order=c(12,0,0), method = "CSS")
@@ -219,3 +220,7 @@ fit = Arima(RO, order=c(23,1,0), method = "CSS")
 autoplot(fit)$data
 fit = Arima(RO, order=c(0,1,1), method = "CSS")
 autoplot(fit)$data
+
+
+
+
