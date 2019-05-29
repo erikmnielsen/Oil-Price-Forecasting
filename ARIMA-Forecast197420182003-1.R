@@ -42,9 +42,6 @@ MDirAcc <- function(Actual, Forecast, lag=1) {
   return( mean(sign(diff(Actual, lag=lag))==sign(diff(Forecast, lag=lag))) )
 }
 
-pacf(RO)
-auto.arima(RO)
-
 # Variable <- read_excel("~/8.semester projekt/Variable.xlsx")
 data <- read_excel("VariableHam74.xlsx")
 data <- as.data.frame(data)
@@ -54,8 +51,6 @@ data$diff_RO <- diff.xts(data$RO, differences = 1)
 data.xts <- xts(data[-1], data[[1]])
 data.xts <- data.xts["1974-1/2018-06"]
 
-fit = Arima(RO, order=c(1,0,0), method = "CSS")
-autoplot(fit)$data
 
 
 RO = data.xts$RO
@@ -68,6 +63,8 @@ dRO.ts <- ts(diffRO, frequency=12,start=c(1974, 2), end=c(2018, 6))
 data.xts$observationer = 1:nrow(data.xts) 
 
 #total er lig 534, 200306 er lig med 354, forskel er lig med 180
+
+acf2(RO)
 
 nc=12
 m_h1=matrix(nrow=182, ncol=nc)
@@ -102,11 +99,6 @@ for (j in 1:nc){
 
 
 arimaf = Arima(train, order=c(23,1,0), method = "CSS")
-
-m_h1
-m_h3
-m_h6
-
 
 # Forecast Accuracy -----------------------------------------------------------------------
 test_h1 = subset(RO.ts[, "RO"],start=353,end = 533)
@@ -203,3 +195,27 @@ grid.table(m.df)
 
 
 m #fraction of random walk - should be <1 to beat the RW
+
+
+fit = Arima(RO, order=c(1,0,0), method = "CSS")
+autoplot(fit)$data
+fit = Arima(RO, order=c(2,0,0), method = "CSS")
+autoplot(fit)$data
+fit = Arima(RO, order=c(12,0,0), method = "CSS")
+autoplot(fit)$data
+fit = Arima(RO, order=c(24,0,0), method = "CSS")
+autoplot(fit)$data
+fit = Arima(RO, order=c(1,0,1), method = "CSS")
+autoplot(fit)$data
+fit = Arima(RO, order=c(2,0,1), method = "CSS")
+autoplot(fit)$data
+fit = Arima(RO, order=c(2,1,2), method = "CSS")
+autoplot(fit)$data
+fit = Arima(RO, order=c(1,1,0), method = "CSS")
+autoplot(fit)$data
+fit = Arima(RO, order=c(11,1,0), method = "CSS")
+autoplot(fit)$data
+fit = Arima(RO, order=c(23,1,0), method = "CSS")
+autoplot(fit)$data
+fit = Arima(RO, order=c(0,1,1), method = "CSS")
+autoplot(fit)$data
